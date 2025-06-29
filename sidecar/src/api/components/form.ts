@@ -23,6 +23,8 @@ const FormDropdown = createWrapperComponent('Form.Dropdown');
 const FormDropdownItem = createWrapperComponent('Form.Dropdown.Item');
 const FormDropdownSection = createWrapperComponent('Form.Dropdown.Section');
 
+const FormLinkAccessory = createWrapperComponent('Form.LinkAccessory');
+
 Object.assign(FormDropdown, {
 	Item: FormDropdownItem,
 	Section: FormDropdownSection
@@ -34,7 +36,8 @@ Object.assign(Form, {
 	Dropdown: FormDropdown,
 	TextField: FormTextField,
 	TextArea: FormTextArea,
-	Description: FormDescription
+	Description: FormDescription,
+	LinkAccessory: FormLinkAccessory
 });
 
 export { Form };
