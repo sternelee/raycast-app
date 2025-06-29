@@ -10,39 +10,32 @@ import {
 } from './actions';
 import {
 	DetailPropsSchema,
+	DetailMetadataPropsSchema,
 	DetailMetadataLabelPropsSchema,
 	DetailMetadataLinkPropsSchema,
 	DetailMetadataTagListPropsSchema,
 	DetailMetadataTagListItemPropsSchema,
 	DetailMetadataSeparatorPropsSchema
 } from './detail';
-import {
-	GridPropsSchema,
-	GridSectionPropsSchema,
-	GridItemPropsSchema,
-	GridDropdownPropsSchema,
-	GridDropdownSectionPropsSchema,
-	GridDropdownItemPropsSchema,
-	DetailMetadataPropsSchema
-} from './grid';
+import { GridPropsSchema, GridItemPropsSchema } from './grid';
+import { ViewSectionPropsSchema } from './section';
 import {
 	FormPropsSchema,
 	FormTextFieldPropsSchema,
 	FormTextAreaPropsSchema,
-	FormDescriptionPropsSchema,
-	FormDropdownPropsSchema,
-	FormDropdownItemPropsSchema
+	FormDescriptionPropsSchema
 } from './form';
 import {
 	ListPropsSchema,
-	ListSectionPropsSchema,
 	ListItemPropsSchema,
 	ListItemDetailPropsSchema,
-	ListItemDetailMetadataPropsSchema,
-	ListDropdownPropsSchema,
-	ListDropdownSectionPropsSchema,
-	ListDropdownItemPropsSchema
+	ListItemDetailMetadataPropsSchema
 } from './list';
+import {
+	DropdownPropsSchema,
+	DropdownSectionPropsSchema,
+	DropdownItemPropsSchema
+} from './dropdown';
 
 export * from './actions';
 export * from './detail';
@@ -51,6 +44,8 @@ export * from './list';
 export * from './form';
 export * from './image';
 export * from './color';
+export * from './dropdown';
+export * from './section';
 
 export const componentSchemas = {
 	Action: ActionPropsSchema,
@@ -61,11 +56,11 @@ export const componentSchemas = {
 	'Action.OpenInBrowser': ActionOpenInBrowserPropsSchema,
 
 	List: ListPropsSchema,
-	'List.Section': ListSectionPropsSchema,
+	'List.Section': ViewSectionPropsSchema,
 	'List.Item': ListItemPropsSchema,
-	'List.Dropdown': ListDropdownPropsSchema,
-	'List.Dropdown.Section': ListDropdownSectionPropsSchema,
-	'List.Dropdown.Item': ListDropdownItemPropsSchema,
+	'List.Dropdown': DropdownPropsSchema,
+	'List.Dropdown.Section': DropdownSectionPropsSchema,
+	'List.Dropdown.Item': DropdownItemPropsSchema,
 	'List.Item.Detail': ListItemDetailPropsSchema,
 	'List.Item.Detail.Metadata': ListItemDetailMetadataPropsSchema,
 	'List.Item.Detail.Metadata.Label': DetailMetadataLabelPropsSchema,
@@ -75,18 +70,19 @@ export const componentSchemas = {
 	'List.Item.Detail.Metadata.Separator': DetailMetadataSeparatorPropsSchema,
 
 	Grid: GridPropsSchema,
-	'Grid.Section': GridSectionPropsSchema,
+	'Grid.Section': ViewSectionPropsSchema,
 	'Grid.Item': GridItemPropsSchema,
-	'Grid.Dropdown': GridDropdownPropsSchema,
-	'Grid.Dropdown.Section': GridDropdownSectionPropsSchema,
-	'Grid.Dropdown.Item': GridDropdownItemPropsSchema,
+	'Grid.Dropdown': DropdownPropsSchema,
+	'Grid.Dropdown.Section': DropdownSectionPropsSchema,
+	'Grid.Dropdown.Item': DropdownItemPropsSchema,
 
 	Form: FormPropsSchema,
 	'Form.TextField': FormTextFieldPropsSchema,
 	'Form.TextArea': FormTextAreaPropsSchema,
 	'Form.Description': FormDescriptionPropsSchema,
-	'Form.Dropdown': FormDropdownPropsSchema,
-	'Form.Dropdown.Item': FormDropdownItemPropsSchema,
+	'Form.Dropdown': DropdownPropsSchema,
+	'Form.Dropdown.Item': DropdownItemPropsSchema,
+	'Form.Dropdown.Section': DropdownSectionPropsSchema,
 
 	Detail: DetailPropsSchema,
 	'Detail.Metadata': DetailMetadataPropsSchema,

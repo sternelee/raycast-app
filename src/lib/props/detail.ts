@@ -37,6 +37,9 @@ export type DetailMetadataTagListProps = z.infer<typeof DetailMetadataTagListPro
 export const DetailMetadataSeparatorPropsSchema = z.object({});
 export type DetailMetadataSeparatorProps = z.infer<typeof DetailMetadataSeparatorPropsSchema>;
 
+export const DetailMetadataPropsSchema = z.object({});
+export type DetailMetadataProps = z.infer<typeof DetailMetadataPropsSchema>;
+
 export const DetailPropsSchema = z.object({
 	isLoading: z.boolean().default(false),
 	markdown: z.string().optional(),
