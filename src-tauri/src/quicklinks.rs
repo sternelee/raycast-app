@@ -1,10 +1,20 @@
 use crate::error::AppError;
+use crate::store::Store;
 use chrono::{DateTime, Utc};
-use rusqlite::{params, Connection, Result as RusqliteResult};
+use rusqlite::{params, Result as RusqliteResult};
 use serde::Serialize;
-use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::{open_path, open_url};
+
+const QUICKLINKS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS quicklinks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    link TEXT NOT NULL,
+    application TEXT,
+    icon TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+)";
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -19,36 +29,14 @@ pub struct Quicklink {
 }
 
 pub struct QuicklinkManager {
-    db: Mutex<Connection>,
+    store: Store,
 }
 
 impl QuicklinkManager {
-    pub fn new(app_handle: AppHandle) -> Result<Self, AppError> {
-        let data_dir = app_handle
-            .path()
-            .app_local_data_dir()
-            .map_err(|_| AppError::DirectoryNotFound)?;
-        let db_path = data_dir.join("quicklinks.sqlite");
-        let db = Connection::open(db_path)?;
-
-        Ok(Self { db: Mutex::new(db) })
-    }
-
-    pub fn init_db(&self) -> RusqliteResult<()> {
-        let db = self.db.lock().unwrap();
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS quicklinks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                link TEXT NOT NULL,
-                application TEXT,
-                icon TEXT,
-                created_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL
-            )",
-            [],
-        )?;
-        Ok(())
+    pub fn new(app_handle: &AppHandle) -> Result<Self, AppError> {
+        let store = Store::new(app_handle, "quicklinks.sqlite")?;
+        store.init_table(QUICKLINKS_SCHEMA)?;
+        Ok(Self { store })
     }
 
     fn create_quicklink(
@@ -58,7 +46,7 @@ impl QuicklinkManager {
         application: Option<String>,
         icon: Option<String>,
     ) -> Result<i64, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let now = Utc::now().timestamp();
         db.execute(
             "INSERT INTO quicklinks (name, link, application, icon, created_at, updated_at)
@@ -69,7 +57,7 @@ impl QuicklinkManager {
     }
 
     fn list_quicklinks(&self) -> Result<Vec<Quicklink>, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let mut stmt = db.prepare("SELECT id, name, link, application, icon, created_at, updated_at FROM quicklinks ORDER BY name ASC")?;
         let quicklinks_iter = stmt.query_map([], |row| {
             let created_at_ts: i64 = row.get(5)?;
@@ -86,7 +74,7 @@ impl QuicklinkManager {
         })?;
 
         quicklinks_iter
-            .collect::<Result<Vec<_>, _>>()
+            .collect::<RusqliteResult<Vec<_>>>()
             .map_err(|e| e.into())
     }
 
@@ -98,7 +86,7 @@ impl QuicklinkManager {
         application: Option<String>,
         icon: Option<String>,
     ) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let now = Utc::now().timestamp();
         db.execute(
             "UPDATE quicklinks SET name = ?, link = ?, application = ?, icon = ?, updated_at = ?
@@ -109,7 +97,7 @@ impl QuicklinkManager {
     }
 
     fn delete_quicklink(&self, id: i64) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         db.execute("DELETE FROM quicklinks WHERE id = ?", params![id])?;
         Ok(())
     }

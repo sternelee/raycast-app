@@ -4,16 +4,31 @@ use super::{
     types::{ClipboardItem, ContentType, INLINE_CONTENT_THRESHOLD_BYTES, PREVIEW_LENGTH_CHARS},
 };
 use crate::error::AppError;
+use crate::store::Store;
 use chrono::Utc;
 use once_cell::sync::Lazy;
-use rusqlite::{params, Connection, OptionalExtension, Result as RusqliteResult};
+use rusqlite::{params, Result as RusqliteResult};
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 
+const CLIPBOARD_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS clipboard_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    hash TEXT UNIQUE NOT NULL,
+    content_type TEXT NOT NULL,
+    encrypted_content TEXT NOT NULL,
+    encrypted_preview TEXT,
+    content_size_bytes INTEGER,
+    source_app_name TEXT,
+    first_copied_at INTEGER NOT NULL,
+    last_copied_at INTEGER NOT NULL,
+    times_copied INTEGER NOT NULL DEFAULT 1,
+    is_pinned INTEGER NOT NULL DEFAULT 0
+)";
+
 pub struct ClipboardHistoryManager {
-    db: Mutex<Connection>,
+    store: Store,
     key: [u8; 32],
     pub image_dir: PathBuf,
 }
@@ -44,7 +59,7 @@ fn row_to_clipboard_item(row: &rusqlite::Row, key: &[u8; 32]) -> RusqliteResult<
 }
 
 impl ClipboardHistoryManager {
-    fn new(app_handle: AppHandle) -> Result<Self, AppError> {
+    fn new(app_handle: &AppHandle) -> Result<Self, AppError> {
         let data_dir = app_handle
             .path()
             .app_local_data_dir()
@@ -52,37 +67,16 @@ impl ClipboardHistoryManager {
         let image_dir = data_dir.join("clipboard_images");
         std::fs::create_dir_all(&image_dir)?;
 
-        let db_path = data_dir.join("clipboard_history.sqlite");
-        let db = Connection::open(db_path)?;
+        let store = Store::new(app_handle, "clipboard_history.sqlite")?;
+        store.init_table(CLIPBOARD_SCHEMA)?;
 
         let key = get_encryption_key()?;
 
         Ok(Self {
-            db: Mutex::new(db),
+            store,
             key,
             image_dir,
         })
-    }
-
-    fn init_db(&self) -> RusqliteResult<()> {
-        let db = self.db.lock().unwrap();
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS clipboard_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                hash TEXT UNIQUE NOT NULL,
-                content_type TEXT NOT NULL,
-                encrypted_content TEXT NOT NULL,
-                encrypted_preview TEXT,
-                content_size_bytes INTEGER,
-                source_app_name TEXT,
-                first_copied_at INTEGER NOT NULL,
-                last_copied_at INTEGER NOT NULL,
-                times_copied INTEGER NOT NULL DEFAULT 1,
-                is_pinned INTEGER NOT NULL DEFAULT 0
-            )",
-            [],
-        )?;
-        Ok(())
     }
 
     pub fn add_item(
@@ -92,7 +86,7 @@ impl ClipboardHistoryManager {
         content_value: String,
         source_app_name: Option<String>,
     ) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let now = Utc::now();
 
         let existing_item: RusqliteResult<i64> = db.query_row(
@@ -134,7 +128,7 @@ impl ClipboardHistoryManager {
         limit: u32,
         offset: u32,
     ) -> Result<Vec<ClipboardItem>, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let mut query = "SELECT id, hash, content_type, source_app_name, first_copied_at, last_copied_at, times_copied, is_pinned, content_size_bytes, encrypted_preview, CASE WHEN content_size_bytes <= ? THEN encrypted_content ELSE NULL END as conditional_encrypted_content FROM clipboard_history".to_string();
         let mut where_clauses: Vec<String> = Vec::new();
         let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> =
@@ -185,7 +179,7 @@ impl ClipboardHistoryManager {
     }
 
     pub fn get_content_by_offset(&self, offset: u32) -> Result<Option<String>, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let res: rusqlite::Result<String> = db.query_row(
             "SELECT encrypted_content FROM clipboard_history ORDER BY last_copied_at DESC LIMIT 1 OFFSET ?",
             params![offset],
@@ -200,7 +194,7 @@ impl ClipboardHistoryManager {
     }
 
     pub fn get_item_content(&self, id: i64) -> Result<String, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let encrypted_content: String = db.query_row(
             "SELECT encrypted_content FROM clipboard_history WHERE id = ?",
             params![id],
@@ -210,30 +204,28 @@ impl ClipboardHistoryManager {
     }
 
     pub fn item_was_copied(&self, id: i64) -> RusqliteResult<usize> {
-        self.db.lock().unwrap().execute(
+        self.store.conn().execute(
             "UPDATE clipboard_history SET last_copied_at = ?, times_copied = times_copied + 1 WHERE id = ?",
             params![Utc::now().timestamp(), id],
         )
     }
 
     pub fn delete_item(&self, id: i64) -> RusqliteResult<usize> {
-        self.db
-            .lock()
-            .unwrap()
+        self.store
+            .conn()
             .execute("DELETE FROM clipboard_history WHERE id = ?", params![id])
     }
 
     pub fn toggle_pin(&self, id: i64) -> RusqliteResult<usize> {
-        self.db.lock().unwrap().execute(
+        self.store.conn().execute(
             "UPDATE clipboard_history SET is_pinned = 1 - is_pinned WHERE id = ?",
             params![id],
         )
     }
 
     pub fn clear_all(&self) -> RusqliteResult<usize> {
-        self.db
-            .lock()
-            .unwrap()
+        self.store
+            .conn()
             .execute("DELETE FROM clipboard_history WHERE is_pinned = 0", [])
     }
 }
@@ -244,12 +236,8 @@ pub static INTERNAL_CLIPBOARD_CHANGE: AtomicBool = AtomicBool::new(false);
 pub fn init(app_handle: AppHandle) {
     let mut manager_guard = MANAGER.lock().unwrap();
     if manager_guard.is_none() {
-        match ClipboardHistoryManager::new(app_handle.clone()) {
+        match ClipboardHistoryManager::new(&app_handle) {
             Ok(manager) => {
-                if let Err(e) = manager.init_db() {
-                    eprintln!("Failed to initialize clipboard history database: {:?}", e);
-                    return;
-                }
                 *manager_guard = Some(manager);
                 drop(manager_guard);
                 start_monitoring(app_handle);

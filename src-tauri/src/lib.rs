@@ -14,6 +14,7 @@ mod oauth;
 mod quicklinks;
 mod snippets;
 mod soulver;
+mod store;
 mod system;
 
 use crate::snippets::input_manager::{EvdevInputManager, InputManager};
@@ -290,26 +291,13 @@ pub fn run() {
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(browser_extension::run_server(app_handle));
 
-            let app_handle_for_history = app.handle().clone();
-            clipboard_history::init(app_handle_for_history);
+            clipboard_history::init(app.handle().clone());
+            file_search::init(app.handle().clone());
 
-            let quicklink_manager = QuicklinkManager::new(app.handle().clone())?;
-            quicklink_manager.init_db()?;
-            app.manage(quicklink_manager);
-
-            let frecency_manager = FrecencyManager::new(app.handle().clone())?;
-            app.manage(frecency_manager);
-
-            let snippet_manager = SnippetManager::new(app.handle().clone())?;
-            snippet_manager.init_db()?;
-            app.manage(snippet_manager);
-
-            let app_handle_for_file_search = app.handle().clone();
-            file_search::init(app_handle_for_file_search);
-
-            let ai_usage_manager = AiUsageManager::new(app.handle())?;
-            ai_usage_manager.init_db()?;
-            app.manage(ai_usage_manager);
+            app.manage(QuicklinkManager::new(app.handle())?);
+            app.manage(FrecencyManager::new(app.handle())?);
+            app.manage(SnippetManager::new(app.handle())?);
+            app.manage(AiUsageManager::new(app.handle())?);
 
             setup_background_refresh();
             setup_global_shortcut(app)?;

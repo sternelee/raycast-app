@@ -1,9 +1,17 @@
 use crate::error::AppError;
+use crate::store::Store;
 use chrono::Utc;
-use rusqlite::{params, Connection, Result as RusqliteResult};
+use rusqlite::{params, Result as RusqliteResult};
 use serde::Serialize;
-use std::sync::Mutex;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
+
+const FRECENCY_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS frecency (
+    item_id TEXT PRIMARY KEY,
+    use_count INTEGER NOT NULL DEFAULT 0,
+    last_used_at INTEGER NOT NULL
+)";
+const HIDDEN_ITEMS_SCHEMA: &str =
+    "CREATE TABLE IF NOT EXISTS hidden_items (item_id TEXT PRIMARY KEY)";
 
 #[derive(Serialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -14,41 +22,19 @@ pub struct FrecencyData {
 }
 
 pub struct FrecencyManager {
-    db: Mutex<Connection>,
+    store: Store,
 }
 
 impl FrecencyManager {
-    pub fn new(app_handle: AppHandle) -> Result<Self, AppError> {
-        let data_dir = app_handle
-            .path()
-            .app_local_data_dir()
-            .map_err(|_| AppError::DirectoryNotFound)?;
-        let db_path = data_dir.join("frecency.sqlite");
-        let db = Connection::open(db_path)?;
-        let manager = Self { db: Mutex::new(db) };
-        manager.init_db()?;
-        Ok(manager)
-    }
-
-    fn init_db(&self) -> RusqliteResult<()> {
-        let db = self.db.lock().unwrap();
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS frecency (
-                item_id TEXT PRIMARY KEY,
-                use_count INTEGER NOT NULL DEFAULT 0,
-                last_used_at INTEGER NOT NULL
-            )",
-            [],
-        )?;
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS hidden_items (item_id TEXT PRIMARY KEY)",
-            [],
-        )?;
-        Ok(())
+    pub fn new(app_handle: &AppHandle) -> Result<Self, AppError> {
+        let store = Store::new(app_handle, "frecency.sqlite")?;
+        store.init_table(FRECENCY_SCHEMA)?;
+        store.init_table(HIDDEN_ITEMS_SCHEMA)?;
+        Ok(Self { store })
     }
 
     pub fn record_usage(&self, item_id: String) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let now = Utc::now().timestamp();
         db.execute(
             "INSERT INTO frecency (item_id, use_count, last_used_at) VALUES (?, 1, ?)
@@ -61,7 +47,7 @@ impl FrecencyManager {
     }
 
     pub fn get_frecency_data(&self) -> Result<Vec<FrecencyData>, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let mut stmt = db.prepare("SELECT item_id, use_count, last_used_at FROM frecency")?;
         let data_iter = stmt.query_map([], |row| {
             Ok(FrecencyData {
@@ -77,13 +63,13 @@ impl FrecencyManager {
     }
 
     pub fn delete_frecency_entry(&self, item_id: String) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         db.execute("DELETE FROM frecency WHERE item_id = ?", params![item_id])?;
         Ok(())
     }
 
     pub fn hide_item(&self, item_id: String) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         db.execute(
             "INSERT OR IGNORE INTO hidden_items (item_id) VALUES (?)",
             params![item_id],
@@ -92,7 +78,7 @@ impl FrecencyManager {
     }
 
     pub fn get_hidden_item_ids(&self) -> Result<Vec<String>, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let mut stmt = db.prepare("SELECT item_id FROM hidden_items")?;
         let ids_iter = stmt.query_map([], |row| row.get(0))?;
 

@@ -1,17 +1,27 @@
 use crate::error::AppError;
+use crate::store::Store;
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
-use rusqlite::{params, Connection, Result as RusqliteResult};
+use rusqlite::{params, Result as RusqliteResult};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 const AI_KEYRING_SERVICE: &str = "dev.byteatatime.raycast.ai";
 const AI_KEYRING_USERNAME: &str = "openrouter_api_key";
+const AI_USAGE_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS ai_generations (
+    id TEXT PRIMARY KEY,
+    created INTEGER NOT NULL,
+    model TEXT NOT NULL,
+    tokens_prompt INTEGER NOT NULL,
+    tokens_completion INTEGER NOT NULL,
+    native_tokens_prompt INTEGER NOT NULL,
+    native_tokens_completion INTEGER NOT NULL,
+    total_cost REAL NOT NULL
+)";
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -223,40 +233,18 @@ pub fn ai_can_access(app: tauri::AppHandle) -> Result<bool, String> {
 }
 
 pub struct AiUsageManager {
-    db: Mutex<Connection>,
+    store: Store,
 }
 
 impl AiUsageManager {
     pub fn new(app_handle: &AppHandle) -> Result<Self, AppError> {
-        let data_dir = app_handle
-            .path()
-            .app_local_data_dir()
-            .map_err(|_| AppError::DirectoryNotFound)?;
-        let db_path = data_dir.join("ai_usage.sqlite");
-        let db = Connection::open(db_path)?;
-        Ok(Self { db: Mutex::new(db) })
-    }
-
-    pub fn init_db(&self) -> RusqliteResult<()> {
-        let db = self.db.lock().unwrap();
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS ai_generations (
-                id TEXT PRIMARY KEY,
-                created INTEGER NOT NULL,
-                model TEXT NOT NULL,
-                tokens_prompt INTEGER NOT NULL,
-                tokens_completion INTEGER NOT NULL,
-                native_tokens_prompt INTEGER NOT NULL,
-                native_tokens_completion INTEGER NOT NULL,
-                total_cost REAL NOT NULL
-            )",
-            [],
-        )?;
-        Ok(())
+        let store = Store::new(app_handle, "ai_usage.sqlite")?;
+        store.init_table(AI_USAGE_SCHEMA)?;
+        Ok(Self { store })
     }
 
     pub fn log_generation(&self, data: &GenerationData) -> Result<(), AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         db.execute(
             "INSERT OR REPLACE INTO ai_generations (id, created, model, tokens_prompt, tokens_completion, native_tokens_prompt, native_tokens_completion, total_cost)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
@@ -275,7 +263,7 @@ impl AiUsageManager {
     }
 
     pub fn get_history(&self, limit: u32, offset: u32) -> Result<Vec<GenerationData>, AppError> {
-        let db = self.db.lock().unwrap();
+        let db = self.store.conn();
         let mut stmt = db.prepare(
             "SELECT id, created, model, tokens_prompt, tokens_completion, native_tokens_prompt, native_tokens_completion, total_cost FROM ai_generations ORDER BY created DESC LIMIT ?1 OFFSET ?2",
         )?;
@@ -311,8 +299,9 @@ pub fn get_ai_usage_history(
 async fn fetch_and_log_usage(
     open_router_request_id: String,
     api_key: String,
-    manager: &AiUsageManager,
+    app_handle: AppHandle,
 ) -> Result<(), AppError> {
+    let manager = app_handle.state::<AiUsageManager>();
     let client = reqwest::Client::new();
     let response = client
         .get(format!(
@@ -346,7 +335,6 @@ async fn fetch_and_log_usage(
 #[tauri::command]
 pub async fn ai_ask_stream(
     app_handle: AppHandle,
-    manager: State<'_, AiUsageManager>,
     request_id: String,
     prompt: String,
     options: AskOptions,
@@ -454,11 +442,9 @@ pub async fn ai_ask_stream(
         .map_err(|e| e.to_string())?;
 
     if let Some(or_req_id) = open_router_request_id {
-        let manager_clone = AiUsageManager {
-            db: Mutex::new(Connection::open(manager.db.lock().unwrap().path().unwrap()).unwrap()),
-        };
+        let handle_clone = app_handle.clone();
         tokio::spawn(async move {
-            if let Err(e) = fetch_and_log_usage(or_req_id, api_key, &manager_clone).await {
+            if let Err(e) = fetch_and_log_usage(or_req_id, api_key, handle_clone).await {
                 eprintln!("[AI Usage Tracking] Error: {}", e);
             }
         });
