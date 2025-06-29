@@ -13,6 +13,7 @@
 		onDispatch: (instanceId: number, handlerName: string, args: unknown[]) => void;
 		uiTree: Map<number, UINode>;
 		showBackButton: boolean;
+		inputRef?: HTMLInputElement | null;
 	};
 
 	let {
@@ -21,7 +22,8 @@
 		onPopView,
 		onDispatch,
 		uiTree,
-		showBackButton
+		showBackButton,
+		inputRef = $bindable()
 	}: Props = $props();
 
 	const viewType = $derived(rootNode?.type);
@@ -43,6 +45,7 @@
 				class="rounded-none border-none !bg-transparent pr-0"
 				{placeholder}
 				bind:value={searchText}
+				bind:ref={inputRef}
 				autofocus
 			/>
 			{#key searchBarAccessoryId}

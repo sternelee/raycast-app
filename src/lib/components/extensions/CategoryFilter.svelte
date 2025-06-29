@@ -4,8 +4,18 @@
 	import * as Command from '$lib/components/ui/command';
 	import { ChevronsUpDown, Check } from '@lucide/svelte';
 	import { extensionsStore } from './store.svelte';
+	import { focusManager } from '$lib/focus.svelte';
 
 	let categoryPopoverOpen = $state(false);
+	const scopeId = `category-filter-${crypto.randomUUID()}`;
+
+	$effect(() => {
+		if (categoryPopoverOpen) {
+			focusManager.requestFocus(scopeId);
+		} else {
+			focusManager.releaseFocus(scopeId);
+		}
+	});
 </script>
 
 <Popover.Root bind:open={categoryPopoverOpen}>

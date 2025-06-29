@@ -1,5 +1,6 @@
 import { _useBaseView, type BaseViewArgs } from './base.svelte';
 import type { GridInset, GridSectionProps } from '$lib/props';
+import { focusManager } from '$lib/focus.svelte';
 
 export function useGridView(args: () => BaseViewArgs & { columns: number; inset?: GridInset }) {
 	const base = _useBaseView(args, 'Grid.Item');
@@ -61,6 +62,10 @@ export function useGridView(args: () => BaseViewArgs & { columns: number; inset?
 	});
 
 	const handleKeydown = (event: KeyboardEvent) => {
+		if (focusManager.activeScope !== 'main-input') {
+			return;
+		}
+
 		if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
 		event.preventDefault();
 

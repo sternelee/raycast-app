@@ -10,6 +10,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { getDropdownItems } from '$lib/components/nodes/shared/dropdown';
 	import type { ListDropdownItemProps } from '$lib/props';
+	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		nodeId: number;
@@ -36,6 +37,7 @@
 	let isInitialized = $state(false);
 	let open = $state(false);
 	let triggerRef = $state<HTMLButtonElement | null>(null);
+	const scopeId = `accessory-dropdown-${nodeId}`;
 
 	const displayValue = $derived(isControlled ? componentProps?.value : internalValue);
 	const selectedItem = $derived(itemsMap.get(displayValue ?? ''));
@@ -67,15 +69,20 @@
 		}
 	});
 
+	$effect(() => {
+		if (open) {
+			focusManager.requestFocus(scopeId);
+		} else {
+			focusManager.releaseFocus(scopeId);
+		}
+	});
+
 	function onSelect(value: string) {
 		if (!isControlled) {
 			internalValue = value;
 		}
 		onDispatch(nodeId, 'onChange', [value]);
 		open = false;
-		tick().then(() => {
-			triggerRef?.focus();
-		});
 	}
 
 	setContext('unified-dropdown', {

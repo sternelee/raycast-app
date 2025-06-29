@@ -5,6 +5,7 @@
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
 	import KeyboardShortcut from '$lib/components/KeyboardShortcut.svelte';
+	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		children: Snippet;
@@ -14,6 +15,15 @@
 
 	let { children, primaryActionNodeId, secondaryActionNodeId }: Props = $props();
 	let open = $state(false);
+	const scopeId = `action-menu-${crypto.randomUUID()}`;
+
+	$effect(() => {
+		if (open) {
+			focusManager.requestFocus(scopeId);
+		} else {
+			focusManager.releaseFocus(scopeId);
+		}
+	});
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {

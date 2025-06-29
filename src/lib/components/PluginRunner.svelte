@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { setContext } from 'svelte';
+	import { setContext, tick } from 'svelte';
 	import MainLayout from '$lib/components/layout/MainLayout.svelte';
 	import Header from '$lib/components/layout/Header.svelte';
 	import Content from '$lib/components/layout/Content.svelte';
@@ -8,6 +8,7 @@
 	import ActionBar from './nodes/shared/ActionBar.svelte';
 	import Footer from './layout/Footer.svelte';
 	import NodeRenderer from './NodeRenderer.svelte';
+	import { focusManager } from '$lib/focus.svelte';
 
 	const {
 		uiTree,
@@ -32,6 +33,7 @@
 	const rootNode = $derived(uiTree.get(rootNodeId!));
 	const selectedItemNode = $derived(uiTree.get(selectedNodeId!));
 	let searchText = $state('');
+	let searchInputEl: HTMLInputElement | null = $state(null);
 	const navigationTitle = $derived(rootNode?.props.navigationTitle as string | undefined);
 	const toastToShow = $derived(Array.from(toasts.entries()).sort((a, b) => b[0] - a[0])[0]?.[1]);
 	const showActionPanelDropdown = $derived((allActions?.length ?? 0) > 1);
@@ -56,6 +58,14 @@
 	}
 
 	$effect(() => {
+		if (focusManager.activeScope === 'main-input') {
+			tick().then(() => {
+				searchInputEl?.focus();
+			});
+		}
+	});
+
+	$effect(() => {
 		if (rootNode) {
 			onDispatch(rootNode.id, 'onSearchTextChange', [searchText]);
 		}
@@ -67,7 +77,15 @@
 {#if rootNode}
 	<MainLayout primaryAction={primaryActionObject} {secondaryAction} {onDispatch}>
 		{#snippet header()}
-			<Header {rootNode} bind:searchText {onPopView} {onDispatch} {uiTree} showBackButton={true} />
+			<Header
+				{rootNode}
+				bind:searchText
+				bind:inputRef={searchInputEl}
+				{onPopView}
+				{onDispatch}
+				{uiTree}
+				showBackButton={true}
+			/>
 		{/snippet}
 
 		{#snippet content()}

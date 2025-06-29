@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import NodeRenderer from '$lib/components/NodeRenderer.svelte';
 	import { getDropdownItems } from '$lib/components/nodes/shared/dropdown';
+	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		nodeId: number;
@@ -30,9 +31,18 @@
 	let mounted = $state(false);
 	let open = $state(false);
 	let triggerRef = $state<HTMLButtonElement>(null!);
+	const scopeId = `form-dropdown-${nodeId}`;
 
 	const displayValue = $derived(isControlled ? componentProps?.value : internalValue);
 	const selectedItem = $derived(itemsMap.get(displayValue ?? ''));
+
+	$effect(() => {
+		if (open) {
+			focusManager.requestFocus(scopeId);
+		} else {
+			focusManager.releaseFocus(scopeId);
+		}
+	});
 
 	$effect(() => {
 		if (componentProps?.value !== undefined && componentProps.value !== internalValue) {
@@ -67,9 +77,6 @@
 		}
 		onDispatch(nodeId, 'onChange', [value]);
 		open = false;
-		tick().then(() => {
-			triggerRef?.focus();
-		});
 	}
 
 	setContext('unified-dropdown', {

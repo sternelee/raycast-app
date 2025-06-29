@@ -12,6 +12,7 @@
 	import { quicklinksStore } from '$lib/quicklinks.svelte';
 	import { useCommandPaletteItems, useCommandPaletteActions } from '$lib/command-palette.svelte';
 	import CommandPaletteActionBar from './ActionBar.svelte';
+	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		plugins: PluginInfo[];
@@ -45,23 +46,35 @@
 
 	const selectedItem = $derived(displayItems[selectedIndex]);
 
+	$effect(() => {
+		if (focusManager.activeScope === 'main-input') {
+			tick().then(() => {
+				searchInputEl?.focus();
+			});
+		}
+	});
+
+	$effect(() => {
+		if (focusManager.activeScope === 'quicklink-argument') {
+			tick().then(() => {
+				argumentInputEl?.focus();
+			});
+		}
+	});
+
 	function resetState() {
 		searchText = '';
 		quicklinkArgument = '';
 		selectedIndex = 0;
 		selectedQuicklinkForArgument = null;
-		tick().then(() => searchInputEl?.focus());
 	}
 
-	async function focusArgumentInput() {
-		await tick();
-		argumentInputEl?.focus();
+	function focusArgumentInput() {
+		focusManager.requestFocus('quicklink-argument');
 	}
 
 	async function setSearchText(text: string) {
 		searchText = text;
-		await tick();
-		searchInputEl?.focus();
 	}
 
 	const actions = useCommandPaletteActions({
@@ -80,6 +93,12 @@
 		}
 	});
 
+	$effect(() => {
+		if (!selectedQuicklinkForArgument) {
+			focusManager.releaseFocus('quicklink-argument');
+		}
+	});
+
 	async function handleArgumentKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter') {
 			e.preventDefault();
@@ -88,9 +107,7 @@
 			}
 		} else if (e.key === 'Escape' || (e.key === 'Backspace' && quicklinkArgument === '')) {
 			e.preventDefault();
-			quicklinkArgument = '';
-			await tick();
-			searchInputEl?.focus();
+			focusManager.releaseFocus('quicklink-argument');
 		}
 	}
 
@@ -98,8 +115,6 @@
 		if (e.key === 'Escape' && searchText) {
 			e.preventDefault();
 			searchText = '';
-			await tick();
-			searchInputEl?.focus();
 		}
 
 		if (!selectedItem) return;

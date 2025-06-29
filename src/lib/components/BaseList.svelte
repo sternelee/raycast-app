@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends { id: string | number }">
 	import { VList, type VListHandle } from 'virtua/svelte';
 	import type { Snippet } from 'svelte';
+	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		items: T[];
@@ -49,6 +50,10 @@
 	});
 
 	function handleKeydown(event: KeyboardEvent) {
+		if (focusManager.activeScope !== 'main-input') {
+			return;
+		}
+
 		if (items.length === 0) return;
 
 		switch (event.key) {

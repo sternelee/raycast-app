@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, Trash, Loader2, Folder, File, Copy, ArrowUpRight, Eye } from '@lucide/svelte';
@@ -13,6 +13,7 @@
 	import BaseList from './BaseList.svelte';
 	import { open } from '@tauri-apps/plugin-shell';
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
+	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -32,8 +33,17 @@
 	let selectedIndex = $state(0);
 	let searchText = $state('');
 	let isFetching = $state(false);
+	let searchInputEl: HTMLInputElement | null = $state(null);
 
 	const selectedItem = $derived(searchResults[selectedIndex]);
+
+	$effect(() => {
+		if (focusManager.activeScope === 'main-input') {
+			tick().then(() => {
+				searchInputEl?.focus();
+			});
+		}
+	});
 
 	const fetchFiles = async () => {
 		if (isFetching) return;
@@ -131,6 +141,7 @@
 			class="rounded-none border-none !bg-transparent pr-0"
 			placeholder="Search for files and folders..."
 			bind:value={searchText}
+			bind:ref={searchInputEl}
 			autofocus
 		/>
 	</header>
