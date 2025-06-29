@@ -17,7 +17,7 @@
 		useTypedNode(() => ({
 			nodeId,
 			uiTree,
-			type: ['List.Dropdown.Section', 'Grid.Dropdown.Section']
+			type: ['List.Dropdown.Section', 'Grid.Dropdown.Section', 'Form.Dropdown.Section']
 		}))
 	);
 </script>
