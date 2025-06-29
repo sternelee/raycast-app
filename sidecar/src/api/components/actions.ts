@@ -11,6 +11,7 @@ const ActionPanelSubmenu = createWrapperComponent('ActionPanel.Submenu');
 const ActionPaste = createWrapperComponent('Action.Paste');
 const ActionCopy = createWrapperComponent('Action.CopyToClipboard');
 const ActionOpenInBrowser = createWrapperComponent('Action.OpenInBrowser');
+const ActionSubmitForm = createWrapperComponent('Action.SubmitForm');
 
 const ActionPush = ({
 	onPush,
@@ -34,7 +35,8 @@ Object.assign(Action, {
 	Paste: ActionPaste,
 	CopyToClipboard: ActionCopy,
 	OpenInBrowser: ActionOpenInBrowser,
-	Push: ActionPush
+	Push: ActionPush,
+	SubmitForm: ActionSubmitForm
 });
 Object.assign(ActionPanel, {
 	Section: ActionPanelSection,
