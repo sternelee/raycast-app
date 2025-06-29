@@ -1,17 +1,16 @@
 import type { UINode } from '$lib/types';
 import {
 	GridItemPropsSchema,
-	GridSectionPropsSchema,
 	ListItemPropsSchema,
-	ListSectionPropsSchema,
+	ViewSectionPropsSchema,
 	type GridItemProps,
-	type ListSectionProps,
-	type ListItemProps
+	type ListItemProps,
+	type ViewSectionProps
 } from '$lib/props';
 import Fuse from 'fuse.js';
 
 export type FlatViewItem = { id: number } & (
-	| { type: 'header'; props: ListSectionProps }
+	| { type: 'header'; props: ViewSectionProps }
 	| { type: 'item'; props: ListItemProps | GridItemProps }
 );
 
@@ -54,8 +53,6 @@ export function _useBaseView(args: () => BaseViewArgs, itemType: 'List.Item' | '
 		}
 
 		const newFlatList: FlatViewItem[] = [];
-		const sectionSchema =
-			itemType === 'List.Item' ? ListSectionPropsSchema : GridSectionPropsSchema;
 		const itemSchema = itemType === 'List.Item' ? ListItemPropsSchema : GridItemPropsSchema;
 		const sectionType = itemType === 'List.Item' ? 'List.Section' : 'Grid.Section';
 
@@ -66,7 +63,7 @@ export function _useBaseView(args: () => BaseViewArgs, itemType: 'List.Item' | '
 			if (!childNode) continue;
 
 			if (childNode.type === sectionType) {
-				const sectionResult = sectionSchema.safeParse(childNode.props);
+				const sectionResult = ViewSectionPropsSchema.safeParse(childNode.props);
 				if (!sectionResult.success) continue;
 
 				const sectionItems: FlatViewItem[] = [];
