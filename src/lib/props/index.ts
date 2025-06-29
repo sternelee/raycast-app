@@ -23,7 +23,8 @@ import {
 	FormPropsSchema,
 	FormTextFieldPropsSchema,
 	FormTextAreaPropsSchema,
-	FormDescriptionPropsSchema
+	FormDescriptionPropsSchema,
+	FormLinkAccessoryPropsSchema
 } from './form';
 import {
 	ListPropsSchema,
@@ -83,6 +84,7 @@ export const componentSchemas = {
 	'Form.Dropdown': DropdownPropsSchema,
 	'Form.Dropdown.Item': DropdownItemPropsSchema,
 	'Form.Dropdown.Section': DropdownSectionPropsSchema,
+	'Form.LinkAccessory': FormLinkAccessoryPropsSchema,
 
 	Detail: DetailPropsSchema,
 	'Detail.Metadata': DetailMetadataPropsSchema,

@@ -39,3 +39,9 @@ export const FormDescriptionPropsSchema = z.object({
 	text: z.string()
 });
 export type FormDescriptionProps = z.infer<typeof FormDescriptionPropsSchema>;
+
+export const FormLinkAccessoryPropsSchema = z.object({
+	target: z.string(),
+	text: z.string()
+});
+export type FormLinkAccessoryProps = z.infer<typeof FormLinkAccessoryPropsSchema>;

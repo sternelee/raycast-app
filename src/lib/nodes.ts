@@ -16,6 +16,7 @@ import FormTextField from '$lib/components/nodes/form/TextField.svelte';
 import FormTextArea from '$lib/components/nodes/form/TextArea.svelte';
 import FormDescription from '$lib/components/nodes/form/Description.svelte';
 import FormDropdown from '$lib/components/nodes/form/Dropdown.svelte';
+import FormLinkAccessory from '$lib/components/nodes/form/LinkAccessory.svelte';
 import AccessoryDropdown from '$lib/components/nodes/shared/AccessoryDropdown.svelte';
 import DropdownItem from '$lib/components/nodes/shared/DropdownItem.svelte';
 import DropdownSection from '$lib/components/nodes/shared/DropdownSection.svelte';
@@ -60,5 +61,6 @@ export const componentMap = new Map<
 	['Form.Description', FormDescription],
 	['Form.Dropdown', FormDropdown],
 	['Form.Dropdown.Item', DropdownItem],
-	['Form.Dropdown.Section', DropdownSection]
+	['Form.Dropdown.Section', DropdownSection],
+	['Form.LinkAccessory', FormLinkAccessory]
 ]);

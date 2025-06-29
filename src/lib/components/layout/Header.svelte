@@ -48,12 +48,14 @@
 				bind:ref={inputRef}
 				autofocus
 			/>
+		{:else if viewType === 'Form'}
+			<div class="grow"></div>
+		{/if}
+		{#if searchBarAccessoryId && (viewType === 'List' || viewType === 'Grid' || viewType === 'Form')}
 			{#key searchBarAccessoryId}
-				{#if searchBarAccessoryId}
-					<div>
-						<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} {onDispatch} />
-					</div>
-				{/if}
+				<div class="mx-2">
+					<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} {onDispatch} />
+				</div>
 			{/key}
 		{/if}
 	</div>
