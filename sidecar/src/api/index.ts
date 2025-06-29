@@ -30,6 +30,7 @@ import { Clipboard } from './clipboard';
 import * as OAuth from './oauth';
 import { AI } from './ai';
 import type { Preference } from '@raycast-linux/protocol';
+import { Keyboard } from './keyboard';
 
 const Image = {
 	Mask: {
@@ -94,6 +95,7 @@ export const getRaycastApi = () => {
 			const [state, setState] = React.useState(initialValue);
 			return [state, setState, false];
 		},
-		BrowserExtension: BrowserExtensionAPI
+		BrowserExtension: BrowserExtensionAPI,
+		Keyboard
 	};
 };
