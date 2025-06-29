@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::store::Store;
+use crate::store::{Storable, Store};
 use chrono::Utc;
 use rusqlite::{params, Result as RusqliteResult};
 use serde::Serialize;
@@ -21,6 +21,16 @@ pub struct FrecencyData {
     pub last_used_at: i64,
 }
 
+impl Storable for FrecencyData {
+    fn from_row(row: &rusqlite::Row) -> RusqliteResult<Self> {
+        Ok(FrecencyData {
+            item_id: row.get(0)?,
+            use_count: row.get(1)?,
+            last_used_at: row.get(2)?,
+        })
+    }
+}
+
 pub struct FrecencyManager {
     store: Store,
 }
@@ -34,9 +44,8 @@ impl FrecencyManager {
     }
 
     pub fn record_usage(&self, item_id: String) -> Result<(), AppError> {
-        let db = self.store.conn();
         let now = Utc::now().timestamp();
-        db.execute(
+        self.store.execute(
             "INSERT INTO frecency (item_id, use_count, last_used_at) VALUES (?, 1, ?)
              ON CONFLICT(item_id) DO UPDATE SET
                 use_count = use_count + 1,
@@ -47,30 +56,18 @@ impl FrecencyManager {
     }
 
     pub fn get_frecency_data(&self) -> Result<Vec<FrecencyData>, AppError> {
-        let db = self.store.conn();
-        let mut stmt = db.prepare("SELECT item_id, use_count, last_used_at FROM frecency")?;
-        let data_iter = stmt.query_map([], |row| {
-            Ok(FrecencyData {
-                item_id: row.get(0)?,
-                use_count: row.get(1)?,
-                last_used_at: row.get(2)?,
-            })
-        })?;
-
-        data_iter
-            .collect::<RusqliteResult<Vec<_>>>()
-            .map_err(|e| e.into())
+        self.store
+            .query("SELECT item_id, use_count, last_used_at FROM frecency", [])
     }
 
     pub fn delete_frecency_entry(&self, item_id: String) -> Result<(), AppError> {
-        let db = self.store.conn();
-        db.execute("DELETE FROM frecency WHERE item_id = ?", params![item_id])?;
+        self.store
+            .execute("DELETE FROM frecency WHERE item_id = ?", params![item_id])?;
         Ok(())
     }
 
     pub fn hide_item(&self, item_id: String) -> Result<(), AppError> {
-        let db = self.store.conn();
-        db.execute(
+        self.store.execute(
             "INSERT OR IGNORE INTO hidden_items (item_id) VALUES (?)",
             params![item_id],
         )?;

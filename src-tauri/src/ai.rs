@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::store::Store;
+use crate::store::{Storable, Store};
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
 use rusqlite::{params, Result as RusqliteResult};
@@ -59,6 +59,21 @@ pub struct GenerationData {
     pub native_tokens_completion: i64,
     #[serde(default)]
     pub total_cost: f64,
+}
+
+impl Storable for GenerationData {
+    fn from_row(row: &rusqlite::Row) -> RusqliteResult<Self> {
+        Ok(GenerationData {
+            id: row.get(0)?,
+            created: row.get(1)?,
+            model: row.get(2)?,
+            tokens_prompt: row.get(3)?,
+            tokens_completion: row.get(4)?,
+            native_tokens_prompt: row.get(5)?,
+            native_tokens_completion: row.get(6)?,
+            total_cost: row.get(7)?,
+        })
+    }
 }
 
 static DEFAULT_AI_MODELS: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
@@ -244,8 +259,7 @@ impl AiUsageManager {
     }
 
     pub fn log_generation(&self, data: &GenerationData) -> Result<(), AppError> {
-        let db = self.store.conn();
-        db.execute(
+        self.store.execute(
             "INSERT OR REPLACE INTO ai_generations (id, created, model, tokens_prompt, tokens_completion, native_tokens_prompt, native_tokens_completion, total_cost)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
@@ -263,25 +277,10 @@ impl AiUsageManager {
     }
 
     pub fn get_history(&self, limit: u32, offset: u32) -> Result<Vec<GenerationData>, AppError> {
-        let db = self.store.conn();
-        let mut stmt = db.prepare(
+        self.store.query(
             "SELECT id, created, model, tokens_prompt, tokens_completion, native_tokens_prompt, native_tokens_completion, total_cost FROM ai_generations ORDER BY created DESC LIMIT ?1 OFFSET ?2",
-        )?;
-        let iter = stmt.query_map(params![limit, offset], |row| {
-            Ok(GenerationData {
-                id: row.get(0)?,
-                created: row.get(1)?,
-                model: row.get(2)?,
-                tokens_prompt: row.get(3)?,
-                tokens_completion: row.get(4)?,
-                native_tokens_prompt: row.get(5)?,
-                native_tokens_completion: row.get(6)?,
-                total_cost: row.get(7)?,
-            })
-        })?;
-
-        iter.collect::<RusqliteResult<Vec<_>>>()
-            .map_err(|e| e.into())
+            params![limit, offset],
+        )
     }
 }
 

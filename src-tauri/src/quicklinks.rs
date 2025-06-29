@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::store::Store;
+use crate::store::{Storable, Store};
 use chrono::{DateTime, Utc};
 use rusqlite::{params, Result as RusqliteResult};
 use serde::Serialize;
@@ -28,6 +28,22 @@ pub struct Quicklink {
     updated_at: DateTime<Utc>,
 }
 
+impl Storable for Quicklink {
+    fn from_row(row: &rusqlite::Row) -> RusqliteResult<Self> {
+        let created_at_ts: i64 = row.get(5)?;
+        let updated_at_ts: i64 = row.get(6)?;
+        Ok(Quicklink {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            link: row.get(2)?,
+            application: row.get(3)?,
+            icon: row.get(4)?,
+            created_at: DateTime::from_timestamp(created_at_ts, 0).unwrap_or_default(),
+            updated_at: DateTime::from_timestamp(updated_at_ts, 0).unwrap_or_default(),
+        })
+    }
+}
+
 pub struct QuicklinkManager {
     store: Store,
 }
@@ -46,36 +62,20 @@ impl QuicklinkManager {
         application: Option<String>,
         icon: Option<String>,
     ) -> Result<i64, AppError> {
-        let db = self.store.conn();
         let now = Utc::now().timestamp();
-        db.execute(
+        self.store.execute(
             "INSERT INTO quicklinks (name, link, application, icon, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?)",
             params![name, link, application, icon, now, now],
         )?;
-        Ok(db.last_insert_rowid())
+        Ok(self.store.last_insert_rowid())
     }
 
     fn list_quicklinks(&self) -> Result<Vec<Quicklink>, AppError> {
-        let db = self.store.conn();
-        let mut stmt = db.prepare("SELECT id, name, link, application, icon, created_at, updated_at FROM quicklinks ORDER BY name ASC")?;
-        let quicklinks_iter = stmt.query_map([], |row| {
-            let created_at_ts: i64 = row.get(5)?;
-            let updated_at_ts: i64 = row.get(6)?;
-            Ok(Quicklink {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                link: row.get(2)?,
-                application: row.get(3)?,
-                icon: row.get(4)?,
-                created_at: DateTime::from_timestamp(created_at_ts, 0).unwrap_or_default(),
-                updated_at: DateTime::from_timestamp(updated_at_ts, 0).unwrap_or_default(),
-            })
-        })?;
-
-        quicklinks_iter
-            .collect::<RusqliteResult<Vec<_>>>()
-            .map_err(|e| e.into())
+        self.store.query(
+            "SELECT id, name, link, application, icon, created_at, updated_at FROM quicklinks ORDER BY name ASC",
+            [],
+        )
     }
 
     fn update_quicklink(
@@ -86,9 +86,8 @@ impl QuicklinkManager {
         application: Option<String>,
         icon: Option<String>,
     ) -> Result<(), AppError> {
-        let db = self.store.conn();
         let now = Utc::now().timestamp();
-        db.execute(
+        self.store.execute(
             "UPDATE quicklinks SET name = ?, link = ?, application = ?, icon = ?, updated_at = ?
              WHERE id = ?",
             params![name, link, application, icon, now, id],
@@ -97,8 +96,8 @@ impl QuicklinkManager {
     }
 
     fn delete_quicklink(&self, id: i64) -> Result<(), AppError> {
-        let db = self.store.conn();
-        db.execute("DELETE FROM quicklinks WHERE id = ?", params![id])?;
+        self.store
+            .execute("DELETE FROM quicklinks WHERE id = ?", params![id])?;
         Ok(())
     }
 }

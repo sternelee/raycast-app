@@ -1,6 +1,6 @@
 use crate::error::AppError;
 use crate::snippets::types::Snippet;
-use crate::store::Store;
+use crate::store::{Storable, Store};
 use chrono::{DateTime, Utc};
 use rusqlite::params;
 use std::sync::Arc;
@@ -18,6 +18,24 @@ const SNIPPETS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS snippets (
 #[derive(Clone)]
 pub struct SnippetManager {
     store: Arc<Store>,
+}
+
+impl Storable for Snippet {
+    fn from_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
+        let created_at_ts: i64 = row.get(4)?;
+        let updated_at_ts: i64 = row.get(5)?;
+        let last_used_at_ts: i64 = row.get(7)?;
+        Ok(Snippet {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            keyword: row.get(2)?,
+            content: row.get(3)?,
+            created_at: DateTime::from_timestamp(created_at_ts, 0).unwrap_or_default(),
+            updated_at: DateTime::from_timestamp(updated_at_ts, 0).unwrap_or_default(),
+            times_used: row.get(6)?,
+            last_used_at: DateTime::from_timestamp(last_used_at_ts, 0).unwrap_or_default(),
+        })
+    }
 }
 
 impl SnippetManager {
@@ -58,52 +76,29 @@ impl SnippetManager {
         keyword: String,
         content: String,
     ) -> Result<i64, AppError> {
-        let db = self.store.conn();
         let now = Utc::now().timestamp();
-        db.execute(
+        self.store.execute(
             "INSERT INTO snippets (name, keyword, content, created_at, updated_at, times_used, last_used_at)
              VALUES (?1, ?2, ?3, ?4, ?4, 0, 0)",
             params![name, keyword, content, now],
         )?;
-        Ok(db.last_insert_rowid())
+        Ok(self.store.last_insert_rowid())
     }
 
     pub fn list_snippets(&self, search_term: Option<String>) -> Result<Vec<Snippet>, AppError> {
-        let db = self.store.conn();
         let mut query = "SELECT id, name, keyword, content, created_at, updated_at, times_used, last_used_at FROM snippets".to_string();
-        let mut params_vec: Vec<Box<dyn rusqlite::ToSql>> = vec![];
 
         if let Some(term) = search_term {
             if !term.is_empty() {
                 query.push_str(" WHERE name LIKE ?1 OR keyword LIKE ?1 OR content LIKE ?1");
-                params_vec.push(Box::new(format!("%{}%", term)));
+                query.push_str(" ORDER BY updated_at DESC");
+                let search_param = format!("%{}%", term);
+                return self.store.query(&query, params![search_param]);
             }
         }
 
         query.push_str(" ORDER BY updated_at DESC");
-
-        let params_ref: Vec<&dyn rusqlite::ToSql> = params_vec.iter().map(|b| b.as_ref()).collect();
-
-        let mut stmt = db.prepare(&query)?;
-        let snippets_iter = stmt.query_map(&params_ref[..], |row| {
-            let created_at_ts: i64 = row.get(4)?;
-            let updated_at_ts: i64 = row.get(5)?;
-            let last_used_at_ts: i64 = row.get(7)?;
-            Ok(Snippet {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                keyword: row.get(2)?,
-                content: row.get(3)?,
-                created_at: DateTime::from_timestamp(created_at_ts, 0).unwrap_or_default(),
-                updated_at: DateTime::from_timestamp(updated_at_ts, 0).unwrap_or_default(),
-                times_used: row.get(6)?,
-                last_used_at: DateTime::from_timestamp(last_used_at_ts, 0).unwrap_or_default(),
-            })
-        })?;
-
-        snippets_iter
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| e.into())
+        self.store.query(&query, [])
     }
 
     pub fn update_snippet(
@@ -113,9 +108,8 @@ impl SnippetManager {
         keyword: String,
         content: String,
     ) -> Result<(), AppError> {
-        let db = self.store.conn();
         let now = Utc::now().timestamp();
-        db.execute(
+        self.store.execute(
             "UPDATE snippets SET name = ?1, keyword = ?2, content = ?3, updated_at = ?4 WHERE id = ?5",
             params![name, keyword, content, now, id],
         )?;
@@ -123,15 +117,14 @@ impl SnippetManager {
     }
 
     pub fn delete_snippet(&self, id: i64) -> Result<(), AppError> {
-        let db = self.store.conn();
-        db.execute("DELETE FROM snippets WHERE id = ?1", params![id])?;
+        self.store
+            .execute("DELETE FROM snippets WHERE id = ?1", params![id])?;
         Ok(())
     }
 
     pub fn snippet_was_used(&self, id: i64) -> Result<(), AppError> {
-        let db = self.store.conn();
         let now = Utc::now().timestamp();
-        db.execute(
+        self.store.execute(
             "UPDATE snippets SET times_used = times_used + 1, last_used_at = ?1 WHERE id = ?2",
             params![now, id],
         )?;
@@ -139,54 +132,16 @@ impl SnippetManager {
     }
 
     pub fn find_snippet_by_keyword(&self, keyword: &str) -> Result<Option<Snippet>, AppError> {
-        let db = self.store.conn();
-        let mut stmt = db.prepare("SELECT id, name, keyword, content, created_at, updated_at, times_used, last_used_at FROM snippets WHERE keyword = ?1")?;
-        let mut rows = stmt.query_map(params![keyword], |row| {
-            let created_at_ts: i64 = row.get(4)?;
-            let updated_at_ts: i64 = row.get(5)?;
-            let last_used_at_ts: i64 = row.get(7)?;
-            Ok(Snippet {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                keyword: row.get(2)?,
-                content: row.get(3)?,
-                created_at: DateTime::from_timestamp(created_at_ts, 0).unwrap_or_default(),
-                updated_at: DateTime::from_timestamp(updated_at_ts, 0).unwrap_or_default(),
-                times_used: row.get(6)?,
-                last_used_at: DateTime::from_timestamp(last_used_at_ts, 0).unwrap_or_default(),
-            })
-        })?;
-
-        if let Some(row) = rows.next() {
-            Ok(Some(row?))
-        } else {
-            Ok(None)
-        }
+        self.store.query_row(
+            "SELECT id, name, keyword, content, created_at, updated_at, times_used, last_used_at FROM snippets WHERE keyword = ?1",
+            params![keyword],
+        )
     }
 
     pub fn find_snippet_by_name(&self, name: &str) -> Result<Option<Snippet>, AppError> {
-        let db = self.store.conn();
-        let mut stmt = db.prepare("SELECT id, name, keyword, content, created_at, updated_at, times_used, last_used_at FROM snippets WHERE name = ?1 ORDER BY updated_at DESC LIMIT 1")?;
-        let mut rows = stmt.query_map(params![name], |row| {
-            let created_at_ts: i64 = row.get(4)?;
-            let updated_at_ts: i64 = row.get(5)?;
-            let last_used_at_ts: i64 = row.get(7)?;
-            Ok(Snippet {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                keyword: row.get(2)?,
-                content: row.get(3)?,
-                created_at: DateTime::from_timestamp(created_at_ts, 0).unwrap_or_default(),
-                updated_at: DateTime::from_timestamp(updated_at_ts, 0).unwrap_or_default(),
-                times_used: row.get(6)?,
-                last_used_at: DateTime::from_timestamp(last_used_at_ts, 0).unwrap_or_default(),
-            })
-        })?;
-
-        if let Some(row) = rows.next() {
-            Ok(Some(row?))
-        } else {
-            Ok(None)
-        }
+        self.store.query_row(
+            "SELECT id, name, keyword, content, created_at, updated_at, times_used, last_used_at FROM snippets WHERE name = ?1 ORDER BY updated_at DESC LIMIT 1",
+            params![name],
+        )
     }
 }
