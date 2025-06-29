@@ -12,6 +12,7 @@ import MetadataTagListItem from '$lib/components/nodes/detail/MetadataTagListIte
 import MetadataSeparator from '$lib/components/nodes/detail/MetadataSeparator.svelte';
 import ListItemDetail from '$lib/components/nodes/list/ItemDetail.svelte';
 import Form from '$lib/components/nodes/form/Form.svelte';
+import FormTextField from '$lib/components/nodes/form/TextField.svelte';
 import FormTextArea from '$lib/components/nodes/form/TextArea.svelte';
 import FormDescription from '$lib/components/nodes/form/Description.svelte';
 import FormDropdown from '$lib/components/nodes/form/Dropdown.svelte';
@@ -54,6 +55,7 @@ export const componentMap = new Map<
 	['List.Item.Detail.Metadata.TagList.Item', MetadataTagListItem],
 	['List.Item.Detail.Metadata.Separator', MetadataSeparator],
 	['Form', Form],
+	['Form.TextField', FormTextField],
 	['Form.TextArea', FormTextArea],
 	['Form.Description', FormDescription],
 	['Form.Dropdown', FormDropdown],
