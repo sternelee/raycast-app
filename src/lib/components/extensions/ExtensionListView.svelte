@@ -3,12 +3,15 @@
 	import ExtensionListItem from './ExtensionListItem.svelte';
 	import { extensionsStore } from './store.svelte';
 	import BaseList from '$lib/components/BaseList.svelte';
+	import type { VListHandle } from 'virtua/svelte';
 
 	type Props = {
 		onSelect: (ext: Datum) => void;
+		onScroll: (offset: number) => void;
+		vlistInstance: VListHandle | null;
 	};
 
-	let { onSelect }: Props = $props();
+	let { onSelect, onScroll, vlistInstance = $bindable() }: Props = $props();
 
 	type DisplayItem = {
 		id: string | number;
@@ -90,6 +93,8 @@
 		onenter={(item) => onSelect(item.data as Datum)}
 		bind:selectedIndex={extensionsStore.selectedIndex}
 		isItemSelectable={(item) => item.itemType === 'item'}
+		onscroll={onScroll}
+		bind:vlistInstance
 	>
 		{#snippet itemSnippet({ item, isSelected, onclick })}
 			{#if item.itemType === 'header'}

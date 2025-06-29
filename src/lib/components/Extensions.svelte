@@ -11,6 +11,7 @@
 	import CategoryFilter from './extensions/CategoryFilter.svelte';
 	import { extensionsStore } from './extensions/store.svelte';
 	import LoadingIndicator from './LoadingIndicator.svelte';
+	import type { VListHandle } from 'virtua/svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -22,19 +23,19 @@
 	let selectedExtension = $state<Datum | null>(null);
 	let expandedImageUrl = $state<string | null>(null);
 	let isInstalling = $state(false);
-	let scrollContainer = $state<HTMLElement | null>(null);
+	let vlistInstance = $state<VListHandle | null>(null);
 
-	$effect(() => {
-		const container = scrollContainer;
-		if (!container) return;
-		const handleScroll = () => {
-			if (container.scrollHeight - container.scrollTop - container.clientHeight < 500) {
-				extensionsStore.loadMore();
-			}
-		};
-		container.addEventListener('scroll', handleScroll);
-		return () => container.removeEventListener('scroll', handleScroll);
-	});
+	const handleScroll = () => {
+		if (!vlistInstance) return;
+		if (
+			vlistInstance.getScrollSize() -
+				vlistInstance.getScrollOffset() -
+				vlistInstance.getViewportSize() <
+			500
+		) {
+			extensionsStore.loadMore();
+		}
+	};
 
 	function handleGlobalKeyDown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
@@ -82,7 +83,7 @@
 			<div class="flex items-center gap-3 px-2">
 				<Icon
 					icon={selectedExtension.icons.light
-						? { source: selectedExtension.icons.light, mask: 'Circle' }
+						? { source: selectedExtension.icons.light, mask: 'circle' }
 						: undefined}
 					class="size-6"
 				/>
@@ -108,8 +109,12 @@
 			onOpenLightbox={(imageUrl) => (expandedImageUrl = imageUrl)}
 		/>
 	{:else}
-		<div class="grow overflow-y-auto" role="listbox" tabindex={-1} bind:this={scrollContainer}>
-			<ExtensionListView onSelect={(ext) => (selectedExtension = ext)} />
+		<div class="grow overflow-y-auto" role="listbox" tabindex={-1}>
+			<ExtensionListView
+				onSelect={(ext) => (selectedExtension = ext)}
+				onScroll={handleScroll}
+				bind:vlistInstance
+			/>
 		</div>
 	{/if}
 </main>

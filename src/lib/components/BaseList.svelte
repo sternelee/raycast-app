@@ -10,6 +10,8 @@
 		isItemSelectable?: (item: T) => boolean;
 		selectedIndex?: number;
 		listElement?: HTMLElement | null;
+		onscroll?: (offset: number) => void;
+		vlistInstance?: VListHandle | null;
 	};
 
 	let {
@@ -18,10 +20,10 @@
 		onenter,
 		isItemSelectable = () => true,
 		selectedIndex = $bindable(0),
-		listElement = $bindable()
+		listElement = $bindable(),
+		onscroll,
+		vlistInstance = $bindable()
 	}: Props = $props();
-
-	let vlistInstance: VListHandle | undefined = $state();
 
 	function findNextSelectableIndex(startIndex: number, direction: 1 | -1): number {
 		if (items.length === 0) return -1;
@@ -85,7 +87,13 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div bind:this={listElement} class="h-full">
-	<VList bind:this={vlistInstance} data={items} getKey={(item) => item.id} class="h-full">
+	<VList
+		bind:this={vlistInstance}
+		data={items}
+		getKey={(item) => item.id}
+		class="h-full"
+		{onscroll}
+	>
 		{#snippet children(item, index)}
 			<div data-index={index}>
 				{@render itemSnippet({
