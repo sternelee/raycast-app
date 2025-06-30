@@ -8,7 +8,7 @@
 <Input
 	type="text"
 	class={cn(
-		'h-auto w-full rounded-none border-none !bg-transparent pr-0 text-base shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
+		'h-15 w-full rounded-none border-none !bg-transparent px-4 pr-0 !text-lg shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
 		className
 	)}
 	bind:ref

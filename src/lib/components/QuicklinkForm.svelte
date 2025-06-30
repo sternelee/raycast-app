@@ -67,7 +67,7 @@
 </script>
 
 <main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="flex h-12 shrink-0 items-center border-b px-2">
+	<header class="flex h-15 shrink-0 items-center border-b">
 		<Button variant="ghost" size="icon" onclick={onBack}>
 			<ArrowLeft class="size-5" />
 		</Button>

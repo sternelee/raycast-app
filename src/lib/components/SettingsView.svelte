@@ -181,7 +181,7 @@
 		</Tabs.Content>
 		<Tabs.Content value="extensions" class="flex">
 			<div class="flex w-80 flex-col border-r">
-				<header class="flex h-12 shrink-0 items-center border-b px-2">
+				<header class="flex h-15 shrink-0 items-center border-b">
 					<button onclick={onBack} class="hover:bg-accent mr-2 rounded p-1">
 						<Icon icon="chevron-left-16" class="size-4" />
 					</button>

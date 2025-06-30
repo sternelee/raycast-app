@@ -139,12 +139,12 @@
 </script>
 
 <main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="flex h-12 shrink-0 items-center border-b px-2">
+	<header class="flex h-15 shrink-0 items-center border-b">
 		<div class="relative flex w-full items-center">
 			<HeaderInput
 				placeholder={selectedQuicklinkForArgument
 					? selectedQuicklinkForArgument.name
-					: 'Search for extensions and commands...'}
+					: 'Search for apps and commands...'}
 				bind:value={searchText}
 				bind:ref={searchInputEl}
 				onkeydown={handleKeyDown}

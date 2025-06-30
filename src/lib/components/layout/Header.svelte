@@ -32,7 +32,7 @@
 	const isLoading = $derived((rootNode?.props.isLoading as boolean) ?? false);
 </script>
 
-<header class="relative flex h-12 shrink-0 items-center px-2">
+<header class="relative flex h-15 shrink-0 items-center">
 	{#if showBackButton}
 		<Button variant="ghost" size="icon" onclick={onPopView}>
 			<ArrowLeft class="size-5" />
