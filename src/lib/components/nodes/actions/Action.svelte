@@ -3,9 +3,10 @@
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import type { UINode } from '$lib/types';
 	import { useTypedNode } from '$lib/node.svelte';
-	import { useActionRole } from '$lib/actions.svelte';
+	import { actionBus } from '$lib/actions.svelte';
 	import BaseAction from './BaseAction.svelte';
 	import type { ActionCopyToClipboardProps, ActionOpenInBrowserProps } from '$lib/props';
+	import { uiStore } from '$lib/ui.svelte';
 
 	type Props = {
 		nodeId: number;
@@ -29,7 +30,9 @@
 			]
 		}))
 	);
-	const { isPrimaryAction, isSecondaryAction } = $derived.by(useActionRole(nodeId));
+
+	const isPrimaryAction = $derived.by(() => uiStore.primaryAction?.id === nodeId);
+	const isSecondaryAction = $derived.by(() => uiStore.secondaryAction?.id === nodeId);
 
 	const title = $derived.by(() => {
 		if (!node || !componentProps) return '';
@@ -71,6 +74,19 @@
 				break;
 		}
 	}
+
+	$effect(() => {
+		if (isPrimaryAction) {
+			actionBus.registerPrimary(handleClick);
+			return () => actionBus.unregisterPrimary();
+		}
+	});
+	$effect(() => {
+		if (isSecondaryAction) {
+			actionBus.registerSecondary(handleClick);
+			return () => actionBus.unregisterSecondary();
+		}
+	});
 </script>
 
 {#if componentProps}

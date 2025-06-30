@@ -97,7 +97,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if rootNode}
-	<MainLayout primaryAction={primaryActionObject} {secondaryAction} onDispatch={handleDispatch}>
+	<MainLayout>
 		{#snippet header()}
 			<Header
 				{rootNode}
@@ -139,13 +139,7 @@
 					{/snippet}
 					{#snippet actions()}
 						{#if showActionPanelDropdown && actionPanel}
-							<NodeRenderer
-								nodeId={actionPanel.id}
-								{uiTree}
-								onDispatch={handleDispatch}
-								primaryActionNodeId={primaryActionObject?.id}
-								secondaryActionNodeId={secondaryAction?.id}
-							/>
+							<NodeRenderer nodeId={actionPanel.id} {uiTree} onDispatch={handleDispatch} />
 						{/if}
 					{/snippet}
 				</ActionBar>

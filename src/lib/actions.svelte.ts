@@ -1,14 +1,29 @@
-import { getContext } from 'svelte';
+type ActionFunction = (() => void) | null;
 
-type ActionPanelContext = {
-	primaryActionNodeId: () => number | undefined;
-	secondaryActionNodeId: () => number | undefined;
+let primaryAction: ActionFunction = null;
+let secondaryAction: ActionFunction = null;
+
+const createActionBus = () => {
+	return {
+		registerPrimary: (fn: () => void) => {
+			primaryAction = fn;
+		},
+		unregisterPrimary: () => {
+			primaryAction = null;
+		},
+		registerSecondary: (fn: () => void) => {
+			secondaryAction = fn;
+		},
+		unregisterSecondary: () => {
+			secondaryAction = null;
+		},
+		executePrimary: () => {
+			primaryAction?.();
+		},
+		executeSecondary: () => {
+			secondaryAction?.();
+		}
+	};
 };
 
-export function useActionRole(nodeId: number) {
-	const context: ActionPanelContext | undefined = getContext('ActionPanelContext');
-	const isPrimaryAction = $derived(context?.primaryActionNodeId() === nodeId);
-	const isSecondaryAction = $derived(context?.secondaryActionNodeId() === nodeId);
-
-	return () => ({ isPrimaryAction, isSecondaryAction });
-}
+export const actionBus = createActionBus();

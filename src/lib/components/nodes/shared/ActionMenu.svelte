@@ -3,17 +3,14 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Kbd } from '$lib/components/ui/kbd';
 	import type { Snippet } from 'svelte';
-	import { setContext } from 'svelte';
 	import KeyboardShortcut from '$lib/components/KeyboardShortcut.svelte';
 	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
 		children: Snippet;
-		primaryActionNodeId?: number;
-		secondaryActionNodeId?: number;
 	};
 
-	let { children, primaryActionNodeId, secondaryActionNodeId }: Props = $props();
+	let { children }: Props = $props();
 	let open = $state(false);
 	const scopeId = `action-menu-${crypto.randomUUID()}`;
 
@@ -31,11 +28,6 @@
 			open = !open;
 		}
 	}
-
-	setContext('ActionPanelContext', {
-		primaryActionNodeId: () => primaryActionNodeId,
-		secondaryActionNodeId: () => secondaryActionNodeId
-	});
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
