@@ -6,7 +6,7 @@
 	import type { ButtonProps } from '$lib/components/ui/button';
 
 	type Props = {
-		title?: string;
+		title?: string | Snippet;
 		icon?: ImageLike | null;
 		primaryAction?: Snippet<[{ props: ButtonProps }]>;
 		actions?: Snippet;
@@ -22,7 +22,11 @@
 				<Icon {icon} class="size-5 shrink-0" />
 			{/if}
 			{#if title}
-				<span class="text-muted-foreground truncate text-sm">{title}</span>
+				{#if typeof title === 'string'}
+					<span class="text-muted-foreground truncate text-sm">{title}</span>
+				{:else}
+					{@render title()}
+				{/if}
 			{/if}
 		</div>
 	{/if}

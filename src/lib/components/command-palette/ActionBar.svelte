@@ -6,6 +6,8 @@
 	import ActionMenu from '$lib/components/nodes/shared/ActionMenu.svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import KeyboardShortcut from '../KeyboardShortcut.svelte';
+	import negativeRaycastLogo from '$lib/assets/raycast-logo-neg-1616x16@2x.png';
+	import positiveRaycastLogo from '$lib/assets/raycast-logo-pos-1616x16@2x.png';
 
 	type Props = {
 		selectedItem: UnifiedItem | undefined;
@@ -36,6 +38,16 @@
 
 {#if selectedItem}
 	<ActionBar>
+		{#snippet title()}
+			<div class="pl-1">
+				<img src={positiveRaycastLogo} alt="Raycast" class="size-5 brightness-50 dark:hidden" />
+				<img
+					src={negativeRaycastLogo}
+					alt="Raycast"
+					class="hidden size-5 brightness-50 dark:block"
+				/>
+			</div>
+		{/snippet}
 		{#snippet primaryAction({ props })}
 			<Button {...props} onclick={barActions?.handleEnter}>
 				{primaryActionText}
