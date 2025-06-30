@@ -39,8 +39,8 @@
 	isSelected={selected}
 	onclick={restProps.onclick}
 >
-	{#if props.accessories && props.accessories.length > 0}
-		{#snippet accessories()}
+	{#snippet accessories()}
+		{#if props.accessories && props.accessories.length > 0}
 			{#each props.accessories ?? [] as accessory, i (i)}
 				{@const tagContent = accessory.tag ?? accessory.date}
 				{@const textContent = accessory.text}
@@ -84,6 +84,6 @@
 					{/if}
 				</div>
 			{/each}
-		{/snippet}
-	{/if}
+		{/if}
+	{/snippet}
 </ListItemBase>
