@@ -23,8 +23,8 @@
 </script>
 
 {#if node && sectionProps}
-	<Command.Separator />
-	<Command.Group heading={sectionProps.title}>
+	<Command.Separator class="my-2" />
+	<Command.Group heading={sectionProps.title} class="p-0">
 		{#each node.children as childId (childId)}
 			<NodeRenderer nodeId={childId} {uiTree} {onDispatch} {selectedValue} />
 		{/each}

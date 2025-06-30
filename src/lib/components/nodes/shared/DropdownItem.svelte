@@ -44,9 +44,10 @@
 			dropdownContext.onSelect(componentProps.value);
 			onDispatch(nodeId, 'onSelect', [componentProps.value]);
 		}}
+		class="mx-2 h-9 px-2.5"
 	>
 		{#if componentProps.icon}
-			<Icon icon={componentProps.icon} class="mr-2 size-4" />
+			<Icon icon={componentProps.icon} class="mr-2 size-[18px]" />
 		{/if}
 		{componentProps.title}
 	</Command.Item>

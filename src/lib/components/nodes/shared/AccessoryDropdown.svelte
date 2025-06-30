@@ -59,7 +59,7 @@
 
 	$effect(() => {
 		if (isControlled && componentProps) {
-			internalValue = componentProps.value;
+			internalValue = componentProps.value ?? undefined;
 		}
 	});
 
@@ -119,10 +119,10 @@
 				</Button>
 			{/snippet}
 		</Popover.Trigger>
-		<Popover.Content class="w-64 p-0">
+		<Popover.Content class="h-[275px] w-64 p-0">
 			<Command.Root>
-				<Command.Input placeholder="Search..." />
-				<Command.List>
+				<Command.Input placeholder="Search..." class="h-12 text-base" />
+				<Command.List class="mt-2">
 					<Command.Empty>No items found.</Command.Empty>
 					{#each node.children as childId (childId)}
 						<NodeRenderer
