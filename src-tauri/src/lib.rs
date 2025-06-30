@@ -328,7 +328,9 @@ pub fn run() {
                     }
                     tauri::WindowEvent::Focused(false) => {
                         if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.hide();
+                            if !cfg!(debug_assertions) {
+                                let _ = window.hide();
+                            }
                         }
                     }
                     _ => {}
