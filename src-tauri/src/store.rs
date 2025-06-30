@@ -43,7 +43,8 @@ impl Store {
         let db = self.conn();
         let mut stmt = db.prepare(sql)?;
         let iter = stmt.query_map(params, T::from_row)?;
-        iter.collect::<RusqliteResult<Vec<_>>>().map_err(|e| e.into())
+        iter.collect::<RusqliteResult<Vec<_>>>()
+            .map_err(|e| e.into())
     }
 
     pub fn query_row<T: Storable, P: rusqlite::Params>(
