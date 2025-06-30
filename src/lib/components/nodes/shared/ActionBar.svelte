@@ -15,7 +15,7 @@
 	let { title, icon, primaryAction, actions }: Props = $props();
 </script>
 
-<footer class="bg-card flex h-12 shrink-0 items-center border-t px-4">
+<footer class="bg-card flex h-10 shrink-0 items-center border-t px-2">
 	{#if title || icon}
 		<div class="flex min-w-0 items-center gap-2">
 			{#if icon}

@@ -55,7 +55,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<footer class="bg-card flex h-12 shrink-0 items-center border-t px-4">
+<footer class="bg-card flex h-10 shrink-0 items-center border-t px-2">
 	<DropdownMenu.Root bind:open={dropdownOpen}>
 		<DropdownMenu.Trigger>
 			{#snippet child({ props })}
