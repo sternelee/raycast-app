@@ -27,7 +27,7 @@
 
 {#if componentProps}
 	<div>
-		<h3 class="text-muted-foreground mb-1 text-xs font-medium uppercase">{componentProps.title}</h3>
+		<h3 class="text-muted-foreground mb-1 text-xs font-medium">{componentProps.title}</h3>
 		<div class="flex items-center gap-2">
 			{#if componentProps.icon}
 				<Icon icon={componentProps.icon} class="size-4" />

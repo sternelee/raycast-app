@@ -27,12 +27,14 @@
 		class:flex-col={layout === 'vertical'}
 	>
 		<main
-			class="flex-grow overflow-y-auto"
+			class="w-[512px] shrink-0 flex-grow overflow-y-auto"
 			class:p-6={layout === 'horizontal'}
 			class:p-4={layout === 'vertical'}
 		>
 			{#if detailProps.markdown}
-				<article class="prose dark:prose-invert prose-img:mx-auto prose-img:max-w-full max-w-full">
+				<article
+					class="prose dark:prose-invert prose-img:mx-auto prose-img:max-w-full prose-sm max-w-full"
+				>
 					<SvelteMarked source={detailProps.markdown} />
 				</article>
 			{/if}
@@ -40,7 +42,7 @@
 
 		{#if metadataNodeId}
 			<aside
-				class="shrink-0 overflow-y-auto bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+				class="overflow-y-auto bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50"
 				class:w-72={layout === 'horizontal'}
 				class:border-l={layout === 'horizontal'}
 				class:border-t={layout === 'vertical'}

@@ -28,13 +28,13 @@
 {#if componentProps}
 	<button
 		type="button"
-		class="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold"
+		class="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-sm"
 		style:color
 		style:background-color="color-mix(in srgb, {color} 15%, transparent)"
 		onclick={handleClick}
 	>
 		{#if componentProps.icon}
-			<Icon icon={componentProps.icon} class="size-3" />
+			<Icon icon={componentProps.icon} class="size-[18px]" />
 		{/if}
 		{#if componentProps.text}
 			<span>{componentProps.text}</span>
