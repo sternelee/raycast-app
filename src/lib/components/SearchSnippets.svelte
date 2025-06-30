@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount, tick, untrack } from 'svelte';
-	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, Trash, Loader2 } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
@@ -11,6 +10,7 @@
 	import ActionMenu from './nodes/shared/ActionMenu.svelte';
 	import BaseList from './BaseList.svelte';
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
+	import HeaderInput from './HeaderInput.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -165,12 +165,7 @@
 		<Button variant="ghost" size="icon" onclick={onBack}>
 			<ArrowLeft class="size-5" />
 		</Button>
-		<Input
-			class="rounded-none border-none !bg-transparent pr-0"
-			placeholder="Search snippets..."
-			bind:value={searchText}
-			autofocus
-		/>
+		<HeaderInput placeholder="Search snippets..." bind:value={searchText} autofocus />
 	</header>
 	<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
 		<div class="flex-grow overflow-y-auto border-r">

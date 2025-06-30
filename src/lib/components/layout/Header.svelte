@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft } from '@lucide/svelte';
 	import type { UINode } from '$lib/types';
 	import NodeRenderer from '../NodeRenderer.svelte';
 	import LoadingIndicator from '../LoadingIndicator.svelte';
+	import HeaderInput from '../HeaderInput.svelte';
 
 	type Props = {
 		rootNode: UINode | undefined;
@@ -41,13 +41,7 @@
 
 	<div class="flex flex-grow items-center">
 		{#if viewType === 'List' || viewType === 'Grid'}
-			<Input
-				class="rounded-none border-none !bg-transparent pr-0"
-				{placeholder}
-				bind:value={searchText}
-				bind:ref={inputRef}
-				autofocus
-			/>
+			<HeaderInput {placeholder} bind:value={searchText} bind:ref={inputRef} autofocus />
 		{:else if viewType === 'Form'}
 			<div class="grow"></div>
 		{/if}

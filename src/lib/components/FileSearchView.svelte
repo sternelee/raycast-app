@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { tick, untrack } from 'svelte';
-	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, Trash, Loader2, Folder, File, Copy, ArrowUpRight, Eye } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
@@ -14,6 +13,7 @@
 	import { open } from '@tauri-apps/plugin-shell';
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import { focusManager } from '$lib/focus.svelte';
+	import HeaderInput from './HeaderInput.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -137,8 +137,7 @@
 		<Button variant="ghost" size="icon" onclick={onBack}>
 			<ArrowLeft class="size-5" />
 		</Button>
-		<Input
-			class="rounded-none border-none !bg-transparent pr-0"
+		<HeaderInput
 			placeholder="Search for files and folders..."
 			bind:value={searchText}
 			bind:ref={searchInputEl}

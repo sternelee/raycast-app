@@ -2,19 +2,19 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount, tick, untrack } from 'svelte';
 	import { VList } from 'virtua/svelte';
-	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, Pin, Trash, Loader2 } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
 	import { convertFileSrc } from '@tauri-apps/api/core';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 	import { Kbd } from './ui/kbd';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as DropdownMenu from './ui/dropdown-menu';
 	import * as Select from './ui/select';
 	import ActionBar from './nodes/shared/ActionBar.svelte';
 	import ActionMenu from './nodes/shared/ActionMenu.svelte';
 	import BaseList from './BaseList.svelte';
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
+	import HeaderInput from './HeaderInput.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -230,12 +230,7 @@
 		<Button variant="ghost" size="icon" onclick={onBack}>
 			<ArrowLeft class="size-5" />
 		</Button>
-		<Input
-			class="rounded-none border-none !bg-transparent pr-0"
-			placeholder="Type to filter entries..."
-			bind:value={searchText}
-			autofocus
-		/>
+		<HeaderInput placeholder="Type to filter entries..." bind:value={searchText} autofocus />
 		<Select.Root bind:value={filter} type="single">
 			<Select.Trigger class="w-32">
 				{filter === 'all' ? 'All Types' : filter.charAt(0).toUpperCase() + filter.slice(1) + 's'}

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { PluginInfo } from '@raycast-linux/protocol';
-	import { Input } from '$lib/components/ui/input';
 	import Calculator from '$lib/components/Calculator.svelte';
 	import BaseList from '$lib/components/BaseList.svelte';
 	import ListItemBase from '../nodes/shared/ListItemBase.svelte';
@@ -13,6 +12,8 @@
 	import { useCommandPaletteItems, useCommandPaletteActions } from '$lib/command-palette.svelte';
 	import CommandPaletteActionBar from './ActionBar.svelte';
 	import { focusManager } from '$lib/focus.svelte';
+	import HeaderInput from '../HeaderInput.svelte';
+	import { Input } from '$lib/components/ui/input';
 
 	type Props = {
 		plugins: PluginInfo[];
@@ -140,8 +141,7 @@
 <main class="bg-background text-foreground flex h-screen flex-col">
 	<header class="flex h-12 shrink-0 items-center border-b px-2">
 		<div class="relative flex w-full items-center">
-			<Input
-				class="w-full rounded-none border-none !bg-transparent pr-0 text-base"
+			<HeaderInput
 				placeholder={selectedQuicklinkForArgument
 					? selectedQuicklinkForArgument.name
 					: 'Search for extensions and commands...'}

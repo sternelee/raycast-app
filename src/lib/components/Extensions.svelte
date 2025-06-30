@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Datum } from '$lib/store';
-	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft } from '@lucide/svelte';
 	import Icon from './Icon.svelte';
@@ -12,6 +11,7 @@
 	import { extensionsStore } from './extensions/store.svelte';
 	import LoadingIndicator from './LoadingIndicator.svelte';
 	import type { VListHandle } from 'virtua/svelte';
+	import HeaderInput from './HeaderInput.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -90,8 +90,7 @@
 				<h1 class="text-lg font-medium">{selectedExtension.title}</h1>
 			</div>
 		{:else}
-			<Input
-				class="rounded-none border-none !bg-transparent pr-0"
+			<HeaderInput
 				placeholder="Search Store for extensions..."
 				bind:value={extensionsStore.searchText}
 				autofocus
