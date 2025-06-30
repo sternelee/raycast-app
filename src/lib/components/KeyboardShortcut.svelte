@@ -38,7 +38,7 @@
 
 	const symbols = shortcut.modifiers
 		.map((modifier) => modifierMap[modifier])
-		.concat(keyMap[shortcut.key] ?? shortcut.key.toUpperCase());
+		.concat(keyMap[shortcut.key] ?? shortcut.key.charAt(0).toUpperCase() + shortcut.key.slice(1));
 </script>
 
 <div class="flex gap-0.5">
