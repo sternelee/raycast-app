@@ -2,14 +2,14 @@
 	import type { UINode } from '$lib/types';
 	import { useTypedNode } from '$lib/node.svelte';
 	import { tick, setContext } from 'svelte';
-	import { ChevronsUpDown } from '@lucide/svelte';
+	import { ChevronDown, ChevronsUpDown } from '@lucide/svelte';
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';
 	import { Button } from '$lib/components/ui/button';
 	import NodeRenderer from '$lib/components/NodeRenderer.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { getDropdownItems } from '$lib/components/nodes/shared/dropdown';
-	import type { ListDropdownItemProps } from '$lib/props';
+	import type { DropdownItemProps } from '$lib/props';
 	import { focusManager } from '$lib/focus.svelte';
 
 	type Props = {
@@ -30,7 +30,7 @@
 
 	const isControlled = $derived(componentProps?.value !== undefined);
 	const dropdownItems = $derived(node ? getDropdownItems(node, uiTree) : []);
-	const itemsMap = $derived(new Map(dropdownItems.map((i: ListDropdownItemProps) => [i.value, i])));
+	const itemsMap = $derived(new Map(dropdownItems.map((i: DropdownItemProps) => [i.value, i])));
 	const firstItemValue = $derived(dropdownItems[0]?.value);
 
 	let internalValue = $state<string | undefined>();
@@ -98,32 +98,39 @@
 				<Button
 					{...popoverTriggerProps}
 					variant="outline"
-					class="w-60 justify-between"
+					class="h-9 w-64 justify-between !px-2.5"
 					role="combobox"
 					aria-expanded={open}
 					title={componentProps.tooltip}
 				>
 					<div class="flex items-center gap-2">
 						{#if selectedItem?.icon}
-							<div class="flex size-4 shrink-0 items-center justify-center">
-								<Icon icon={selectedItem.icon} />
+							<div class="flex size-[18px] shrink-0 items-center justify-center">
+								<Icon icon={selectedItem.icon} class="size-[18px]" />
 							</div>
 						{/if}
-						<span class="truncate">
+						<span class="truncate text-base">
 							{selectedItem?.title ?? componentProps?.placeholder ?? 'Select...'}
 						</span>
 					</div>
-					<ChevronsUpDown class="h-4 w-4 shrink-0 opacity-50" />
+					<ChevronDown
+						class="size-4 shrink-0 opacity-50 transition-transform {open ? 'rotate-180' : ''}"
+					/>
 				</Button>
 			{/snippet}
 		</Popover.Trigger>
-		<Popover.Content class="w-60 p-0">
+		<Popover.Content class="w-64 p-0">
 			<Command.Root>
 				<Command.Input placeholder="Search..." />
 				<Command.List>
 					<Command.Empty>No items found.</Command.Empty>
 					{#each node.children as childId (childId)}
-						<NodeRenderer nodeId={childId} {uiTree} {onDispatch} selectedValue={displayValue} />
+						<NodeRenderer
+							nodeId={childId}
+							{uiTree}
+							{onDispatch}
+							selectedValue={displayValue ?? undefined}
+						/>
 					{/each}
 				</Command.List>
 			</Command.Root>

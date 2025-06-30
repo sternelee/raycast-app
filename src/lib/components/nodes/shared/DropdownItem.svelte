@@ -45,7 +45,6 @@
 			onDispatch(nodeId, 'onSelect', [componentProps.value]);
 		}}
 	>
-		<CheckIcon class={cn('mr-2 size-4', !isSelected && 'text-transparent')} />
 		{#if componentProps.icon}
 			<Icon icon={componentProps.icon} class="mr-2 size-4" />
 		{/if}
