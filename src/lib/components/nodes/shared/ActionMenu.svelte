@@ -35,7 +35,7 @@
 <DropdownMenu.Root bind:open>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<Button {...props} variant="ghost" size="sm">
+			<Button {...props} variant="ghost" size="action">
 				Actions
 				<KeyboardShortcut shortcut={{ key: 'k', modifiers: ['cmd'] }} />
 			</Button>

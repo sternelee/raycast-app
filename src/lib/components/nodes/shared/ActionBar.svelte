@@ -29,7 +29,7 @@
 
 	<div class="ml-auto flex items-center gap-2">
 		{#if primaryAction}
-			{@render primaryAction({ props: { variant: 'ghost', size: 'sm' } })}
+				{@render primaryAction({ props: { variant: 'ghost', size: 'action' } })}
 		{/if}
 
 		{#if actions}
