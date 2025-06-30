@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { UINode } from '$lib/types';
 	import { useTypedNode } from '$lib/node.svelte';
-	import { Textarea } from '$lib/components/ui/textarea';
 	import { Input } from '$lib/components/ui/input';
+	import { serializeEvent } from './utils';
 
 	type Props = {
 		nodeId: number;
@@ -53,7 +53,7 @@
 				placeholder={componentProps.placeholder}
 				value={displayValue ?? ''}
 				oninput={onInput}
-				onblur={(e) => onDispatch(nodeId, 'onBlur', [e])}
+				onblur={(e) => onDispatch(nodeId, 'onBlur', [serializeEvent(componentProps.id, e)])}
 				aria-invalid={!!componentProps.error}
 			/>
 			{#if componentProps.error}
