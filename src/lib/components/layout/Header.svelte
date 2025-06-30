@@ -54,9 +54,7 @@
 		{/if}
 		{#if searchBarAccessoryId && (viewType === 'List' || viewType === 'Grid' || viewType === 'Form')}
 			{#key searchBarAccessoryId}
-				<div class="mx-2">
-					<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} {onDispatch} />
-				</div>
+				<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} {onDispatch} />
 			{/key}
 		{/if}
 	</div>
