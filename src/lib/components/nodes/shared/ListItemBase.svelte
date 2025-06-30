@@ -19,20 +19,20 @@
 
 <button
 	type="button"
-	class="hover:bg-accent/50 flex w-full items-center gap-3 px-4 py-2 text-left"
+	class="hover:bg-accent/50 flex h-12 w-full items-center gap-3 rounded-md px-2 text-left"
 	class:bg-accent={isSelected}
 	{...restProps}
 >
 	<div class="flex size-5 shrink-0 items-center justify-center">
 		{#if icon}
-			<Icon {icon} {assetsPath} class="size-4" />
+			<Icon {icon} {assetsPath} class="size-[22px]" />
 		{:else}
-			<div class="size-4"></div>
+			<div class="size-[22px]"></div>
 		{/if}
 	</div>
 
-	<div class="flex flex-grow items-baseline gap-4 overflow-hidden">
-		<p class="font-medium whitespace-nowrap">{title}</p>
+	<div class="flex flex-grow items-baseline gap-3 overflow-hidden">
+		<p class="whitespace-nowrap">{title}</p>
 		{#if subtitle}
 			<p class="text-muted-foreground truncate">{subtitle}</p>
 		{/if}

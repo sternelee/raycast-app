@@ -95,7 +95,7 @@
 		{onscroll}
 	>
 		{#snippet children(item, index)}
-			<div data-index={index}>
+			<div data-index={index} class="mx-2">
 				{@render itemSnippet({
 					item,
 					isSelected: selectedIndex === index,
