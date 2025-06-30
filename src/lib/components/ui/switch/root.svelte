@@ -28,6 +28,12 @@
 	const { root } = elements;
 </script>
 
-<div use:root {...$$restProps} role="switch" aria-checked={checked} data-state={checked ? 'checked' : 'unchecked'}>
+<div
+	use:root
+	{...$$restProps}
+	role="switch"
+	aria-checked={checked}
+	data-state={checked ? 'checked' : 'unchecked'}
+>
 	<slot />
 </div>
