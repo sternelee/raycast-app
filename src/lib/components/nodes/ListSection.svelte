@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { ListSectionProps } from '$lib/props';
+	import type { ViewSectionProps } from '$lib/props';
 
 	type Props = {
-		props: ListSectionProps;
+		props: ViewSectionProps;
 	};
 
 	let { props }: Props = $props();

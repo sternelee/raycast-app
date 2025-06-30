@@ -1,5 +1,5 @@
 import { _useBaseView, type BaseViewArgs } from './base.svelte';
-import type { GridInset, GridSectionProps } from '$lib/props';
+import type { GridInset, ViewSectionProps } from '$lib/props';
 import { focusManager } from '$lib/focus.svelte';
 
 export function useGridView(args: () => BaseViewArgs & { columns: number; inset?: GridInset }) {
@@ -13,7 +13,7 @@ export function useGridView(args: () => BaseViewArgs & { columns: number; inset?
 
 		for (const item of list) {
 			if (item.type === 'header') {
-				const sectionProps = item.props as GridSectionProps;
+				const sectionProps = item.props as ViewSectionProps;
 				if (item.id === -1) {
 					// This is the synthetic section for top-level items, so it should inherit from the Grid.
 					currentSectionInset = gridInset;

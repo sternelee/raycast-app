@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { GridSectionProps } from '$lib/props';
+	import type { ViewSectionProps } from '$lib/props';
 
 	type Props = {
-		props: GridSectionProps;
+		props: ViewSectionProps;
 	};
 
 	let { props }: Props = $props();
