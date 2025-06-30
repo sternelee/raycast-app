@@ -12,8 +12,11 @@ export const createLocalStorage = () => {
 };
 
 export const createWrapperComponent = (name: string) => {
-	const Component = ({ children, ...rest }: { children?: React.ReactNode }) =>
-		jsx(name as ElementType, { ...rest, children });
+	const Component = React.forwardRef(
+		({ children, ...rest }: { children?: React.ReactNode }, ref) => {
+			return jsx(name as ElementType, { ...rest, children, ref });
+		}
+	);
 	Component.displayName = name;
 	return Component;
 };

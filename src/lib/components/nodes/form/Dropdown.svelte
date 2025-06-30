@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { UINode } from '$lib/types';
 	import { useTypedNode } from '$lib/node.svelte';
-	import { tick, setContext } from 'svelte';
+	import { tick, setContext, untrack, getContext } from 'svelte';
 	import { ChevronsUpDownIcon } from '@lucide/svelte';
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';
@@ -9,6 +9,7 @@
 	import NodeRenderer from '$lib/components/NodeRenderer.svelte';
 	import { getDropdownItems } from '$lib/components/nodes/shared/dropdown';
 	import { focusManager } from '$lib/focus.svelte';
+	import { imperativeBus } from '$lib/imperative.svelte';
 
 	type Props = {
 		nodeId: number;
@@ -20,6 +21,9 @@
 
 	const { node, props: componentProps } = $derived.by(
 		useTypedNode(() => ({ nodeId, uiTree, type: 'Form.Dropdown' }))
+	);
+	const { register } = getContext<{ register: (id: string, value: unknown) => void }>(
+		'form-context'
 	);
 
 	const isControlled = $derived(componentProps?.value !== undefined);
@@ -37,6 +41,12 @@
 	const selectedItem = $derived(itemsMap.get(displayValue ?? ''));
 
 	$effect(() => {
+		if (componentProps) {
+			register(componentProps.id!, displayValue);
+		}
+	});
+
+	$effect(() => {
 		if (open) {
 			focusManager.requestFocus(scopeId);
 		} else {
@@ -46,7 +56,7 @@
 
 	$effect(() => {
 		if (componentProps?.value !== undefined && componentProps.value !== internalValue) {
-			internalValue = componentProps.value;
+			internalValue = componentProps.value ?? undefined;
 		}
 	});
 
@@ -66,6 +76,19 @@
 			if (internalValue !== componentProps?.value) {
 				if (internalValue !== undefined) {
 					onDispatch(nodeId, 'onChange', [internalValue]);
+				}
+			}
+		}
+	});
+
+	$effect(() => {
+		const cmd = imperativeBus.command;
+		if (cmd && cmd.nodeId === nodeId) {
+			if (cmd.command === 'focus') {
+				triggerRef?.focus();
+			} else if (cmd.command === 'reset') {
+				if (!untrack(() => isControlled)) {
+					internalValue = untrack(() => componentProps?.defaultValue);
 				}
 			}
 		}

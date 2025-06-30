@@ -9,6 +9,8 @@
 	import Footer from './layout/Footer.svelte';
 	import NodeRenderer from './NodeRenderer.svelte';
 	import { focusManager } from '$lib/focus.svelte';
+	import { SvelteMap } from 'svelte/reactivity';
+	import { sidecarService } from '$lib/sidecar.svelte';
 
 	const {
 		uiTree,
@@ -23,12 +25,11 @@
 	} = $derived(uiStore);
 
 	type Props = {
-		onDispatch: (instanceId: number, handlerName: string, args: unknown[]) => void;
 		onPopView: () => void;
 		onToastAction: (toastId: number, actionType: 'primary' | 'secondary') => void;
 	};
 
-	let { onDispatch, onPopView, onToastAction }: Props = $props();
+	let { onPopView, onToastAction }: Props = $props();
 
 	const rootNode = $derived(uiTree.get(rootNodeId!));
 	const selectedItemNode = $derived(uiTree.get(selectedNodeId!));
@@ -37,14 +38,35 @@
 	const navigationTitle = $derived(rootNode?.props.navigationTitle as string | undefined);
 	const toastToShow = $derived(Array.from(toasts.entries()).sort((a, b) => b[0] - a[0])[0]?.[1]);
 	const showActionPanelDropdown = $derived((allActions?.length ?? 0) > 1);
+	const formValues = new SvelteMap<string, unknown>();
 
 	const assetsPath = $derived(
 		currentRunningPlugin ? path.dirname(currentRunningPlugin.pluginPath) + '/assets' : ''
 	);
 	setContext('assetsPath', assetsPath);
+	setContext('form-context', {
+		register: (fieldId: string, value: unknown) => {
+			formValues.set(fieldId, value);
+		}
+	});
 
 	function handleSelect(nodeId: number | undefined) {
 		uiStore.selectedNodeId = nodeId;
+	}
+
+	function handleDispatch(instanceId: number, handlerName: string, args: unknown[]) {
+		const instance = uiTree.get(instanceId);
+		if (instance?.type === 'Action.SubmitForm' && handlerName === 'onSubmit') {
+			const valuesObject = Object.fromEntries(formValues.entries());
+			sidecarService.dispatchEvent('dispatch-event', {
+				instanceId,
+				handlerName,
+				args: [valuesObject]
+			});
+			formValues.clear();
+		} else {
+			sidecarService.dispatchEvent('dispatch-event', { instanceId, handlerName, args });
+		}
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -67,7 +89,7 @@
 
 	$effect(() => {
 		if (rootNode) {
-			onDispatch(rootNode.id, 'onSearchTextChange', [searchText]);
+			handleDispatch(rootNode.id, 'onSearchTextChange', [searchText]);
 		}
 	});
 </script>
@@ -75,14 +97,14 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if rootNode}
-	<MainLayout primaryAction={primaryActionObject} {secondaryAction} {onDispatch}>
+	<MainLayout primaryAction={primaryActionObject} {secondaryAction} onDispatch={handleDispatch}>
 		{#snippet header()}
 			<Header
 				{rootNode}
 				bind:searchText
 				bind:inputRef={searchInputEl}
 				{onPopView}
-				{onDispatch}
+				onDispatch={handleDispatch}
 				{uiTree}
 				showBackButton={true}
 			/>
@@ -93,7 +115,7 @@
 				{rootNode}
 				{selectedItemNode}
 				{uiTree}
-				{onDispatch}
+				onDispatch={handleDispatch}
 				onSelect={handleSelect}
 				{searchText}
 			/>
@@ -110,7 +132,7 @@
 								{...props}
 								nodeId={primaryActionObject.id}
 								{uiTree}
-								{onDispatch}
+								onDispatch={handleDispatch}
 								displayAs="button"
 							/>
 						{/if}
@@ -120,7 +142,7 @@
 							<NodeRenderer
 								nodeId={actionPanel.id}
 								{uiTree}
-								{onDispatch}
+								onDispatch={handleDispatch}
 								primaryActionNodeId={primaryActionObject?.id}
 								secondaryActionNodeId={secondaryAction?.id}
 							/>

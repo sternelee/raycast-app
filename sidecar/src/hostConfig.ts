@@ -238,6 +238,34 @@ export const hostConfig: HostConfig<
 			namedChildren: {}
 		};
 
+		const isImperative = [
+			'Form.TextField',
+			'Form.PasswordField',
+			'Form.TextArea',
+			'Form.Checkbox',
+			'Form.DatePicker',
+			'Form.Dropdown',
+			'Form.TagPicker',
+			'Form.FilePicker'
+		].includes(instance.type as string);
+
+		if (isImperative) {
+			Object.assign(instance, {
+				focus: () => {
+					writeOutput({
+						type: 'FOCUS_ELEMENT',
+						payload: { elementId: instance.id }
+					});
+				},
+				reset: () => {
+					writeOutput({
+						type: 'RESET_ELEMENT',
+						payload: { elementId: instance.id }
+					});
+				}
+			});
+		}
+
 		(internalInstanceHandle as Fiber).stateNode = instance;
 		instances.set(id, instance);
 

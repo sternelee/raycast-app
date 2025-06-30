@@ -41,6 +41,16 @@ const LogMessageSchema = z.object({
 	payload: z.unknown()
 });
 
+const FocusElementMessageSchema = z.object({
+	type: z.literal('FOCUS_ELEMENT'),
+	payload: z.object({ elementId: z.number() })
+});
+
+const ResetElementMessageSchema = z.object({
+	type: z.literal('RESET_ELEMENT'),
+	payload: z.object({ elementId: z.number() })
+});
+
 export const SidecarMessageSchema = z.union([BatchUpdateSchema, CommandSchema, LogMessageSchema]);
 export type SidecarMessage = z.infer<typeof SidecarMessageSchema>;
 
@@ -74,6 +84,8 @@ export const SidecarMessageWithPluginsSchema = z.union([
 	AiStreamChunkMessageSchema,
 	AiStreamEndMessageSchema,
 	AiStreamErrorMessageSchema,
-	AiCanAccessMessageSchema
+	AiCanAccessMessageSchema,
+	FocusElementMessageSchema,
+	ResetElementMessageSchema
 ]);
 export type SidecarMessageWithPlugins = z.infer<typeof SidecarMessageWithPluginsSchema>;

@@ -3,6 +3,8 @@
 	import { useTypedNode } from '$lib/node.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { serializeEvent } from './utils';
+	import { imperativeBus } from '$lib/imperative.svelte';
+	import { getContext, untrack } from 'svelte';
 
 	type Props = {
 		nodeId: number;
@@ -15,11 +17,15 @@
 	const { props: componentProps } = $derived.by(
 		useTypedNode(() => ({ nodeId, uiTree, type: 'Form.TextField' }))
 	);
+	const { register } = getContext<{ register: (id: string, value: unknown) => void }>(
+		'form-context'
+	);
 
 	const isControlled = $derived(componentProps?.value !== undefined);
 
 	let internalValue = $state('');
 	let isInitialized = false;
+	let inputRef: HTMLInputElement | null = $state(null);
 
 	$effect(() => {
 		if (componentProps && !isInitialized && !isControlled) {
@@ -30,6 +36,12 @@
 
 	const displayValue = $derived(isControlled ? componentProps?.value : internalValue);
 
+	$effect(() => {
+		if (componentProps) {
+			register(componentProps.id, displayValue);
+		}
+	});
+
 	function onInput(e: Event) {
 		const newValue = (e.target as HTMLTextAreaElement).value;
 		if (!isControlled) {
@@ -37,6 +49,19 @@
 		}
 		onDispatch(nodeId, 'onChange', [newValue]);
 	}
+
+	$effect(() => {
+		const cmd = imperativeBus.command;
+		if (cmd && cmd.nodeId === nodeId) {
+			if (cmd.command === 'focus') {
+				inputRef?.focus();
+			} else if (cmd.command === 'reset') {
+				if (!untrack(() => isControlled)) {
+					internalValue = untrack(() => componentProps?.defaultValue ?? '');
+				}
+			}
+		}
+	});
 </script>
 
 {#if componentProps}
@@ -49,6 +74,7 @@
 		</label>
 		<div class="w-full">
 			<Input
+				bind:ref={inputRef}
 				id={componentProps.id}
 				placeholder={componentProps.placeholder}
 				value={displayValue ?? ''}

@@ -5,6 +5,7 @@ import { CommandSchema, SidecarMessageWithPluginsSchema } from '@raycast-linux/p
 import { invoke } from '@tauri-apps/api/core';
 import { appCacheDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { listen } from '@tauri-apps/api/event';
+import { imperativeBus } from './imperative.svelte';
 
 type OauthState = {
 	url: string;
@@ -175,6 +176,16 @@ class SidecarService {
 
 		if (typedMessage.type === 'log') {
 			this.#log(`SIDECAR: ${typedMessage.payload}`);
+			return;
+		}
+
+		if (typedMessage.type === 'FOCUS_ELEMENT') {
+			imperativeBus.dispatch(typedMessage.payload.elementId, 'focus');
+			return;
+		}
+
+		if (typedMessage.type === 'RESET_ELEMENT') {
+			imperativeBus.dispatch(typedMessage.payload.elementId, 'reset');
 			return;
 		}
 
