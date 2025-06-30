@@ -76,13 +76,14 @@
 	}
 
 	$effect(() => {
-		if (isPrimaryAction) {
+		// TODO: is this the best way to check if we're in a dropdown?
+		if (isPrimaryAction && displayAs === 'button') {
 			actionBus.registerPrimary(handleClick);
 			return () => actionBus.unregisterPrimary();
 		}
 	});
 	$effect(() => {
-		if (isSecondaryAction) {
+		if (isSecondaryAction && displayAs === 'button') {
 			actionBus.registerSecondary(handleClick);
 			return () => actionBus.unregisterSecondary();
 		}
