@@ -31,10 +31,6 @@
 			class:p-6={layout === 'horizontal'}
 			class:p-4={layout === 'vertical'}
 		>
-			{#if detailProps.isLoading}
-				<div class="h-2 w-full animate-pulse rounded bg-gray-200"></div>
-			{/if}
-
 			{#if detailProps.markdown}
 				<article class="prose dark:prose-invert prose-img:mx-auto prose-img:max-w-full max-w-full">
 					<SvelteMarked source={detailProps.markdown} />
