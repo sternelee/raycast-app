@@ -31,9 +31,9 @@
 <svelte:window onkeydown={view.handleKeydown} />
 
 <div class="flex h-full flex-col">
-	<div class="flex-grow overflow-y-auto">
+	<div class="flex-grow overflow-y-auto px-4">
 		<div
-			class="grid h-full content-start"
+			class="grid h-full content-start gap-x-2.5 gap-y-2"
 			style:grid-template-columns={`repeat(${gridProps?.columns ?? 6}, 1fr)`}
 		>
 			{#each view.flatList as item, index (item.id)}

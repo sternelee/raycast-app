@@ -26,21 +26,18 @@
 	});
 </script>
 
-<button
-	type="button"
-	class={cn(
-		'hover:bg-accent/50 flex w-full flex-col items-center gap-3 text-left',
-		paddingClass,
-		selected && 'bg-accent'
-	)}
-	{...restProps}
->
-	<img src={props.content} alt={props.title} />
+<button type="button" class={cn('flex w-full flex-col text-left', paddingClass)} {...restProps}>
+	<img
+		src={props.content}
+		alt={props.title}
+		class="hover:border-foreground/50 bg-muted mb-1 size-[115px] rounded-md border-2 border-transparent"
+		class:!border-foreground={selected}
+	/>
 
 	{#if props.title}
 		<span class="text-sm font-medium">{props.title}</span>
 	{/if}
 	{#if props.subtitle}
-		<span class="text-muted-foreground text-xs">{props.subtitle}</span>
+		<span class="text-muted-foreground text-sm">{props.subtitle}</span>
 	{/if}
 </button>
