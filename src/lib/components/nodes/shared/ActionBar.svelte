@@ -27,21 +27,24 @@
 		</div>
 	{/if}
 
-	<div class="ml-auto flex items-center gap-2">
+	<div class="ml-auto flex items-center">
 		{#if primaryAction}
+			<div class="peer order-1">
 				{@render primaryAction({ props: { variant: 'ghost', size: 'action' } })}
+			</div>
 		{/if}
-
+		{#if actions}
+			<div class="peer order-3">
+				{@render actions()}
+			</div>
+		{/if}
 		{#if actions}
 			{#if primaryAction}
-				<div class="group flex items-center">
-					<Separator
-						orientation="vertical"
-						class="!h-4 !w-px transition-opacity group-hover:opacity-0"
-					/>
-				</div>
+				<Separator
+					orientation="vertical"
+					class="order-2 mr-1 ml-2 !h-3 !w-[2px] transition-opacity peer-hover:opacity-0"
+				/>
 			{/if}
-			{@render actions()}
 		{/if}
 	</div>
 </footer>
