@@ -23,13 +23,11 @@
 	class:bg-accent={isSelected}
 	{...restProps}
 >
-	<div class="flex size-5 shrink-0 items-center justify-center">
-		{#if icon}
-			<Icon {icon} {assetsPath} class="size-[22px]" />
-		{:else}
-			<div class="size-[22px]"></div>
-		{/if}
-	</div>
+	{#if icon}
+		<Icon {icon} {assetsPath} class="size-[22px]" />
+	{:else}
+		<div class="size-[22px]"></div>
+	{/if}
 
 	<div class="flex flex-grow items-baseline gap-3 overflow-hidden">
 		<p class="whitespace-nowrap">{title}</p>
