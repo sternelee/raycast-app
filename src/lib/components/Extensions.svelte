@@ -71,7 +71,7 @@
 <svelte:window onkeydown={handleGlobalKeyDown} />
 
 <main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="relative flex h-15 shrink-0 items-center border-b">
+	<header class="relative mb-2 flex h-15 shrink-0 items-center border-b">
 		<Button
 			variant="ghost"
 			size="icon"
