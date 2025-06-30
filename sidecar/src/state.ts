@@ -1,5 +1,5 @@
 import type { AnyInstance, Container, Toast } from './types';
-import type { Command } from '@raycast-linux/protocol';
+import type { Command, Preference } from '@raycast-linux/protocol';
 import type React from 'react';
 
 export const instances = new Map<number, AnyInstance>();
@@ -28,4 +28,12 @@ export let currentRootElement: React.ReactElement | null = null;
 
 export const setCurrentRootElement = (element: React.ReactElement) => {
 	currentRootElement = element;
+};
+
+export let currentPluginName: string | null = null;
+export let currentPluginPreferences: Preference[] = [];
+
+export const setCurrentPlugin = (pluginName: string, preferences?: Preference[]) => {
+	currentPluginName = pluginName;
+	currentPluginPreferences = preferences || [];
 };

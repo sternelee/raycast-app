@@ -1,7 +1,7 @@
 import React from 'react';
 import { updateContainer } from './reconciler';
 import { writeLog, writeOutput } from './io';
-import { getRaycastApi, setCurrentPlugin } from './api';
+import { getRaycastApi } from './api';
 import { inspect } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,7 +9,7 @@ import type { PluginInfo, Preference } from '@raycast-linux/protocol';
 import { environment } from './api/environment';
 import { config } from './config';
 import * as ReactJsxRuntime from 'react/jsx-runtime';
-import { aiContext } from './state';
+import { aiContext, setCurrentPlugin } from './state';
 
 const createPluginRequire =
 	() =>

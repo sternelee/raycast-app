@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { config } from '../config';
+import { currentPluginName } from '../state';
 
 type IndexEntry = {
 	filePath: string;
@@ -26,7 +27,7 @@ export class Cache {
 		fs.mkdirSync(cacheRoot, { recursive: true });
 		this.options = {
 			capacity: options.capacity ?? 10 * 1024 * 1024,
-			namespace: options.namespace ?? 'default',
+			namespace: options.namespace ?? currentPluginName ?? 'default',
 			directory: options.directory ?? cacheRoot
 		};
 

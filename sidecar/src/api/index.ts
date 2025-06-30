@@ -29,22 +29,14 @@ import { BrowserExtensionAPI } from './browserExtension';
 import { Clipboard } from './clipboard';
 import * as OAuth from './oauth';
 import { AI } from './ai';
-import type { Preference } from '@raycast-linux/protocol';
 import { Keyboard } from './keyboard';
+import { currentPluginName, currentPluginPreferences } from '../state';
 
 const Image = {
 	Mask: {
 		Circle: 'circle',
 		RoundedRectangle: 'roundedRectangle'
 	}
-};
-
-let currentPluginName: string | null = null;
-let currentPluginPreferences: Preference[] = [];
-
-export const setCurrentPlugin = (pluginName: string, preferences?: Preference[]) => {
-	currentPluginName = pluginName;
-	currentPluginPreferences = preferences || [];
 };
 
 export const getRaycastApi = () => {
