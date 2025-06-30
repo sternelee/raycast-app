@@ -33,7 +33,7 @@
 	const isLoading = $derived((rootNode?.props.isLoading as boolean) ?? false);
 </script>
 
-<header class="relative mb-2 flex h-15 shrink-0 items-center pr-4 pl-[18px]">
+<header class="relative flex h-15 shrink-0 items-center pr-4 pl-[18px]">
 	{#if showBackButton}
 		<Button size="icon" onclick={onPopView} variant="secondary" class="size-6">
 			<Icon icon="arrow-left-16" />

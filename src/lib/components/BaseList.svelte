@@ -91,7 +91,7 @@
 		bind:this={vlistInstance}
 		data={items}
 		getKey={(item) => item.id}
-		class="h-full"
+		class="h-full py-2"
 		{onscroll}
 	>
 		{#snippet children(item, index)}
