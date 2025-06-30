@@ -35,6 +35,7 @@ export const componentMap = new Map<
 	['Action.CopyToClipboard', Action],
 	['Action.OpenInBrowser', Action],
 	['Action.Push', Action],
+	['Action.SubmitForm', Action],
 	['Detail', Detail],
 	['Detail.Metadata', Metadata],
 	['Detail.Metadata.Label', MetadataLabel],

@@ -20,7 +20,13 @@
 		useTypedNode(() => ({
 			nodeId,
 			uiTree,
-			type: ['Action', 'Action.Push', 'Action.CopyToClipboard', 'Action.OpenInBrowser']
+			type: [
+				'Action',
+				'Action.Push',
+				'Action.CopyToClipboard',
+				'Action.OpenInBrowser',
+				'Action.SubmitForm'
+			]
 		}))
 	);
 	const { isPrimaryAction, isSecondaryAction } = $derived.by(useActionRole(nodeId));
@@ -52,6 +58,10 @@
 				const openProps = componentProps as ActionOpenInBrowserProps;
 				openUrl(openProps.url);
 				onDispatch(nodeId, 'onOpenInBrowser', []);
+				break;
+
+			case 'Action.SubmitForm':
+				onDispatch(nodeId, 'onSubmit', []);
 				break;
 
 			case 'Action.Push':

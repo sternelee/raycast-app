@@ -27,7 +27,7 @@ function createUiStore() {
 
 	const actionInfo = $derived.by(() => {
 		const actionsNodeId =
-			rootNode?.type === 'Detail'
+			rootNode?.type === 'Detail' || rootNode?.type === 'Form'
 				? rootNode.namedChildren?.['actions']
 				: selectedItemNode?.namedChildren?.['actions'];
 		if (!actionsNodeId)

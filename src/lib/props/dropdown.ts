@@ -23,7 +23,7 @@ export const DropdownPropsSchema = z.object({
 	placeholder: z.string().optional(),
 	storeValue: z.boolean().optional(),
 	throttle: z.boolean().optional(),
-	value: z.string().optional(),
+	value: z.string().optional().nullable(),
 	autoFocus: z.boolean().default(false),
 	error: z.string().optional(),
 	info: z.string().optional(),

@@ -6,7 +6,8 @@ import {
 	ActionPanelPropsSchema,
 	ActionPanelSectionPropsSchema,
 	ActionCopyToClipboardPropsSchema,
-	ActionOpenInBrowserPropsSchema
+	ActionOpenInBrowserPropsSchema,
+	ActionSubmitFormPropsSchema
 } from './actions';
 import {
 	DetailPropsSchema,
@@ -55,6 +56,7 @@ export const componentSchemas = {
 	'ActionPanel.Section': ActionPanelSectionPropsSchema,
 	'Action.CopyToClipboard': ActionCopyToClipboardPropsSchema,
 	'Action.OpenInBrowser': ActionOpenInBrowserPropsSchema,
+	'Action.SubmitForm': ActionSubmitFormPropsSchema,
 
 	List: ListPropsSchema,
 	'List.Section': ViewSectionPropsSchema,

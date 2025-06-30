@@ -61,6 +61,15 @@ export const ActionOpenInBrowserPropsSchema = z.object({
 });
 export type ActionOpenInBrowserProps = z.infer<typeof ActionOpenInBrowserPropsSchema>;
 
+const ActionStyleSchema = z.enum(['regular', 'destructive']);
+export const ActionSubmitFormPropsSchema = z.object({
+	title: z.string().optional(),
+	icon: ImageLikeSchema.optional(),
+	shortcut: KeyboardShortcutSchema.optional(),
+	style: ActionStyleSchema.optional()
+});
+export type ActionSubmitFormProps = z.infer<typeof ActionSubmitFormPropsSchema>;
+
 export const ActionPanelSectionPropsSchema = z.object({
 	title: z.string().optional()
 });
