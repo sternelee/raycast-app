@@ -15,6 +15,7 @@
 	"packageManager": "pnpm@10.11.1",
 	"devDependencies": {
 		"@types/node": "^24.0.0",
+		"@types/pako": "^2.0.3",
 		"@types/react": "^19.1.7",
 		"@types/react-reconciler": "^0.32.0",
 		"@yao-pkg/pkg": "^6.5.1",
@@ -24,6 +25,7 @@
 	"dependencies": {
 		"@raycast-linux/protocol": "workspace:*",
 		"msgpackr": "^1.11.4",
+		"pako": "^2.1.0",
 		"react": "^19.1.0",
 		"react-reconciler": "^0.32.0"
 	}

@@ -29,6 +29,7 @@
 		"embla-carousel-svelte": "^8.6.0",
 		"fuse.js": "^7.1.0",
 		"msgpackr": "^1.11.4",
+		"pako": "^2.1.0",
 		"svelte-marked": "^0.8.0",
 		"virtua": "^0.41.5",
 		"zod": "^3.25.63"
@@ -46,6 +47,7 @@
 		"@tailwindcss/vite": "^4.0.0",
 		"@tauri-apps/cli": "^2",
 		"@types/node": "^24.0.0",
+		"@types/pako": "^2.0.3",
 		"bits-ui": "^2.8.10",
 		"clsx": "^2.1.1",
 		"eslint": "^9.18.0",

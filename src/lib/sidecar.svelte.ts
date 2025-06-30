@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { appCacheDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { listen } from '@tauri-apps/api/event';
 import { imperativeBus } from './imperative.svelte';
+import { inflate } from 'pako';
 
 type OauthState = {
 	url: string;
@@ -143,14 +144,19 @@ class SidecarService {
 
 	#processReceiveBuffer = () => {
 		while (this.#receiveBuffer.length >= 4) {
-			const messageLength = this.#receiveBuffer.readUInt32BE(0);
+			const headerValue = this.#receiveBuffer.readUInt32BE(0);
+			const isCompressed = (headerValue & 0x80000000) !== 0;
+			const messageLength = headerValue & 0x7fffffff; // remove compression bit
 			const totalLength = 4 + messageLength;
 
 			if (this.#receiveBuffer.length >= totalLength) {
-				const messagePayload = this.#receiveBuffer.subarray(4, totalLength);
+				let messagePayload: Uint8Array = this.#receiveBuffer.subarray(4, totalLength);
 				this.#receiveBuffer = this.#receiveBuffer.subarray(totalLength);
 
 				try {
+					if (isCompressed) {
+						messagePayload = inflate(messagePayload);
+					}
 					const message = this.#unpackr.unpack(messagePayload);
 					this.#routeMessage(message);
 				} catch (e) {
@@ -163,6 +169,8 @@ class SidecarService {
 		}
 	};
 
+	private messageParsingTimes: number[] = [];
+
 	#routeMessage = async (message: unknown) => {
 		const result = SidecarMessageWithPluginsSchema.safeParse(message);
 
@@ -173,6 +181,10 @@ class SidecarService {
 		}
 
 		const typedMessage = result.data;
+		this.messageParsingTimes.push(Date.now() - typedMessage.timestamp);
+		console.log(
+			`Rolling average: ${this.messageParsingTimes.reduce((a, b) => a + b, 0) / this.messageParsingTimes.length}ms`
+		);
 
 		if (typedMessage.type === 'log') {
 			this.#log(`SIDECAR: ${typedMessage.payload}`);
