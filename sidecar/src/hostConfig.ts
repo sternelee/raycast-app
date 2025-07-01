@@ -15,7 +15,7 @@ import {
 	clearCommitBuffer,
 	commitBuffer
 } from './state';
-import { writeOutput } from './io';
+import { writeLog, writeOutput } from './io';
 import { serializeProps, optimizeCommitBuffer, getComponentDisplayName } from './utils';
 import React, { type ReactNode } from 'react';
 
@@ -214,7 +214,9 @@ export const hostConfig: HostConfig<
 	prepareForCommit: () => null,
 	resetAfterCommit: () => {
 		if (commitBuffer.length > 0) {
+			const now = Date.now();
 			const optimizedPayload = optimizeCommitBuffer(commitBuffer);
+			writeLog(`time to optimize: ${Date.now() - now}ms`);
 			writeOutput({
 				type: 'BATCH_UPDATE',
 				payload: optimizedPayload

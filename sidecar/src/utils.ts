@@ -57,13 +57,37 @@ export function serializeProps(props: Record<string, unknown>): Record<string, u
 	return serialized;
 }
 
+function createStableFingerprint(
+	props: Record<string, unknown>,
+	namedChildren?: Record<string, number>
+): string {
+	let result = '';
+
+	const propKeys = Object.keys(props).sort();
+	for (const key of propKeys) {
+		if (key === 'ref') continue;
+		result += `${key}=${String(props[key])};`;
+	}
+
+	if (namedChildren) {
+		const childKeys = Object.keys(namedChildren).sort();
+		if (childKeys.length > 0) {
+			result += '::nc::'; // named children
+			for (const key of childKeys) {
+				result += `${key}=${String(namedChildren[key])};`;
+			}
+		}
+	}
+	return result;
+}
+
 export function optimizeCommitBuffer(buffer: Command[]): Command[] {
 	const CHILD_OP_THRESHOLD = 10;
 	const PROPS_TEMPLATE_THRESHOLD = 5;
 
 	const childOpsByParent = new Map<ParentInstance['id'], Command[]>();
-	const updatePropsOps = [] as Extract<Command, { type: 'UPDATE_PROPS' }>[];
-	const otherOps: Command[] = [];
+	const updatePropsOps: Extract<Command, { type: 'UPDATE_PROPS' }>[] = [];
+	const otherNonUpdateOps: Command[] = [];
 
 	for (const op of buffer) {
 		if (op.type === 'UPDATE_PROPS') {
@@ -76,41 +100,45 @@ export function optimizeCommitBuffer(buffer: Command[]): Command[] {
 			const parentId = op.payload.parentId;
 			childOpsByParent.set(parentId, (childOpsByParent.get(parentId) ?? []).concat(op));
 		} else {
-			otherOps.push(op);
+			otherNonUpdateOps.push(op);
 		}
 	}
 
-	const finalOps: Command[] = [...otherOps];
+	const finalOps: Command[] = [...otherNonUpdateOps];
 
 	for (const [parentId, ops] of childOpsByParent.entries()) {
 		if (ops.length <= CHILD_OP_THRESHOLD) {
 			finalOps.push(...ops);
-			continue;
-		}
-
-		const parentInstance = parentId === 'root' ? root : instances.get(parentId as number);
-
-		if (parentInstance && 'children' in parentInstance) {
-			const childrenIds = parentInstance.children.map(({ id }) => id);
-			finalOps.push({
-				type: 'REPLACE_CHILDREN',
-				payload: { parentId, childrenIds }
-			});
 		} else {
-			finalOps.push(...ops);
+			const parentInstance = parentId === 'root' ? root : instances.get(parentId as number);
+			if (parentInstance && 'children' in parentInstance) {
+				const childrenIds = parentInstance.children.map(({ id }) => id);
+				finalOps.push({ type: 'REPLACE_CHILDREN', payload: { parentId, childrenIds } });
+			} else {
+				finalOps.push(...ops);
+			}
 		}
 	}
 
+	if (updatePropsOps.length < PROPS_TEMPLATE_THRESHOLD * 2) {
+		finalOps.push(...updatePropsOps);
+		return finalOps;
+	}
+
 	const propsToIdMap = new Map<string, number[]>();
-	const idToUpdatePropsMap = new Map<number, Extract<Command, { type: 'UPDATE_PROPS' }>>();
+	const idToPayloadMap = new Map<number, Extract<Command, { type: 'UPDATE_PROPS' }>['payload']>();
 
 	for (const op of updatePropsOps) {
-		idToUpdatePropsMap.set(op.payload.id, op);
-		const propsToFingerprint = { ...op.payload.props };
-		delete (propsToFingerprint as { ref?: unknown }).ref; // ref is instance-specific
-		const fingerprint = JSON.stringify(propsToFingerprint);
+		const payload = op.payload;
+		idToPayloadMap.set(payload.id, payload);
+		const fingerprint = createStableFingerprint(payload.props, payload.namedChildren);
 
-		propsToIdMap.set(fingerprint, (propsToIdMap.get(fingerprint) ?? []).concat(op.payload.id));
+		const ids = propsToIdMap.get(fingerprint);
+		if (ids) {
+			ids.push(payload.id);
+		} else {
+			propsToIdMap.set(fingerprint, [payload.id]);
+		}
 	}
 
 	const handledIds = new Set<number>();
@@ -118,28 +146,26 @@ export function optimizeCommitBuffer(buffer: Command[]): Command[] {
 	for (const ids of propsToIdMap.values()) {
 		if (ids.length > PROPS_TEMPLATE_THRESHOLD) {
 			const templateId = ids[0];
-			const prototypeOp = idToUpdatePropsMap.get(templateId);
+			const prototypePayload = idToPayloadMap.get(templateId)!;
 
-			if (prototypeOp) {
-				finalOps.push({
-					type: 'DEFINE_PROPS_TEMPLATE',
-					payload: {
-						templateId,
-						props: prototypeOp.payload.props,
-						namedChildren: prototypeOp.payload.namedChildren
-					}
-				});
+			finalOps.push({
+				type: 'DEFINE_PROPS_TEMPLATE',
+				payload: {
+					templateId,
+					props: prototypePayload.props,
+					namedChildren: prototypePayload.namedChildren
+				}
+			});
 
-				finalOps.push({
-					type: 'APPLY_PROPS_TEMPLATE',
-					payload: {
-						templateId: templateId,
-						targetIds: ids
-					}
-				});
+			finalOps.push({
+				type: 'APPLY_PROPS_TEMPLATE',
+				payload: {
+					templateId: templateId,
+					targetIds: ids
+				}
+			});
 
-				ids.forEach((id) => handledIds.add(id));
-			}
+			ids.forEach((id) => handledIds.add(id));
 		}
 	}
 
