@@ -16,6 +16,7 @@ export const writeOutput = (data: object): void => {
 			if (compressed.length < payload.length) {
 				payloadToWrite = compressed;
 				isCompressed = true;
+				writeLog(`Compressed payload from ${payload.length} to ${compressed.length} bytes`);
 			}
 		}
 

@@ -46,6 +46,17 @@ const ClearContainerPayloadSchema = z.object({
 	containerId: z.string()
 });
 
+const DefinePropsTemplatePayloadSchema = z.object({
+	templateId: z.number(),
+	props: z.record(z.string(), z.unknown()),
+	namedChildren: z.record(z.string(), z.number()).optional()
+});
+
+const ApplyPropsTemplatePayloadSchema = z.object({
+	templateId: z.number(),
+	targetIds: z.array(z.number())
+});
+
 export const CommandSchema = z.discriminatedUnion('type', [
 	z.object({ type: z.literal('CREATE_INSTANCE'), payload: CreateInstancePayloadSchema }),
 	z.object({ type: z.literal('CREATE_TEXT_INSTANCE'), payload: CreateTextInstancePayloadSchema }),
@@ -58,6 +69,8 @@ export const CommandSchema = z.discriminatedUnion('type', [
 	z.object({ type: z.literal('CLEAR_CONTAINER'), payload: ClearContainerPayloadSchema }),
 	z.object({ type: z.literal('SHOW_TOAST'), payload: ShowToastPayloadSchema }),
 	z.object({ type: z.literal('UPDATE_TOAST'), payload: UpdateToastPayloadSchema }),
-	z.object({ type: z.literal('HIDE_TOAST'), payload: HideToastPayloadSchema })
+	z.object({ type: z.literal('HIDE_TOAST'), payload: HideToastPayloadSchema }),
+	z.object({ type: z.literal('DEFINE_PROPS_TEMPLATE'), payload: DefinePropsTemplatePayloadSchema }),
+	z.object({ type: z.literal('APPLY_PROPS_TEMPLATE'), payload: ApplyPropsTemplatePayloadSchema })
 ]);
 export type Command = z.infer<typeof CommandSchema>;

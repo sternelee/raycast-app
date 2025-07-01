@@ -21,6 +21,10 @@ function createUiStore() {
 	let currentPreferences = $state<Record<string, unknown>>({});
 	let currentRunningPlugin = $state<PluginInfo | null>(null);
 	const toasts = new SvelteMap<number, Toast>();
+	const propTemplates = new Map<
+		number,
+		{ props: Record<string, unknown>; namedChildren?: Record<string, number> }
+	>();
 
 	const rootNode = $derived(uiTree.get(rootNodeId!));
 	const selectedItemNode = $derived(uiTree.get(selectedNodeId!));
@@ -103,6 +107,7 @@ function createUiStore() {
 		uiTree = new Map();
 		rootNodeId = null;
 		selectedNodeId = undefined;
+		propTemplates.clear();
 	};
 
 	function processSingleCommand(
@@ -112,6 +117,29 @@ function createUiStore() {
 		getMutableNode: (id: number) => UINode | undefined
 	) {
 		switch (command.type) {
+			case 'DEFINE_PROPS_TEMPLATE': {
+				const { templateId, props, namedChildren } = command.payload;
+				propTemplates.set(templateId, { props, namedChildren });
+				break;
+			}
+			case 'APPLY_PROPS_TEMPLATE': {
+				const { templateId, targetIds } = command.payload;
+				const template = propTemplates.get(templateId);
+				if (!template) {
+					console.error(`Props template ${templateId} not found.`);
+					break;
+				}
+				for (const id of targetIds) {
+					const node = getMutableNode(id);
+					if (node) {
+						Object.assign(node.props, template.props);
+						if (template.namedChildren) {
+							node.namedChildren = template.namedChildren;
+						}
+					}
+				}
+				break;
+			}
 			case 'REPLACE_CHILDREN': {
 				const { parentId, childrenIds } = command.payload;
 				const parentNode = getMutableNode(parentId as number);
