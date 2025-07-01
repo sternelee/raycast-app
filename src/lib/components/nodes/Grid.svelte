@@ -5,6 +5,7 @@
 	import GridItem from './GridItem.svelte';
 	import { useGridView } from '$lib/views';
 	import { useTypedNode } from '$lib/node.svelte';
+	import { VList, type VListHandle } from 'virtua/svelte';
 
 	type Props = {
 		nodeId: number;
@@ -26,30 +27,41 @@
 		onSearchTextChange: !!gridProps?.onSearchTextChange,
 		inset: gridProps?.inset
 	}));
+
+	let vlist: VListHandle | null = null;
+	$effect(() => {
+		view.vlistInstance = vlist ?? undefined;
+	});
 </script>
 
 <svelte:window onkeydown={view.handleKeydown} />
 
 <div class="flex h-full flex-col">
 	<div class="flex-grow overflow-y-auto px-4">
-		<div
-			class="grid h-full content-start gap-x-2.5 gap-y-2"
-			style:grid-template-columns={`repeat(${gridProps?.columns ?? 6}, 1fr)`}
-		>
-			{#each view.flatList as item, index (item.id)}
+		<VList bind:this={vlist} data={view.virtualListItems} getKey={(item) => item.id} class="h-full">
+			{#snippet children(item)}
+				<div class="h-2"></div>
 				{#if item.type === 'header'}
 					<GridSection props={item.props} />
-				{:else if item.type === 'item'}
-					<div id="item-{item.id}">
-						<GridItem
-							props={item.props as GridItemProps}
-							selected={view.selectedItemIndex === index}
-							onclick={() => view.setSelectedItemIndex(index)}
-							inset={item.inset}
-						/>
+				{:else if item.type === 'row'}
+					<div
+						class="grid content-start gap-x-2.5"
+						style:grid-template-columns={`repeat(${gridProps?.columns ?? 6}, 1fr)`}
+					>
+						{#each item.items as gridItem (gridItem.id)}
+							{@const flatIndex = view.flatList.findIndex((f) => f.id === gridItem.id)}
+							<div id="item-{gridItem.id}">
+								<GridItem
+									props={gridItem.props as GridItemProps}
+									selected={view.selectedItemIndex === flatIndex}
+									onclick={() => view.setSelectedItemIndex(flatIndex)}
+									inset={gridItem.inset}
+								/>
+							</div>
+						{/each}
 					</div>
 				{/if}
-			{/each}
-		</div>
+			{/snippet}
+		</VList>
 	</div>
 </div>

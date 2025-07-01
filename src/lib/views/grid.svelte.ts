@@ -1,6 +1,15 @@
 import { _useBaseView, type BaseViewArgs } from './base.svelte';
-import type { GridInset, ViewSectionProps } from '$lib/props';
+import type { GridInset, ViewSectionProps, GridItemProps } from '$lib/props';
 import { focusManager } from '$lib/focus.svelte';
+import type { VListHandle } from 'virtua/svelte';
+
+export type VirtualGridItem =
+	| { id: string | number; type: 'header'; props: ViewSectionProps }
+	| {
+			id: string;
+			type: 'row';
+			items: { id: number; type: 'item'; props: GridItemProps; inset?: GridInset }[];
+	  };
 
 export function useGridView(args: () => BaseViewArgs & { columns: number; inset?: GridInset }) {
 	const base = _useBaseView(args, 'Grid.Item');
@@ -8,18 +17,15 @@ export function useGridView(args: () => BaseViewArgs & { columns: number; inset?
 
 	const processedFlatList = $derived.by(() => {
 		const list = base.flatList;
-		const newList: ((typeof list)[number] & { inset?: GridInset })[] = [];
+		const newList: (typeof list)[number][] = [];
 		let currentSectionInset: GridInset | undefined;
 
 		for (const item of list) {
 			if (item.type === 'header') {
 				const sectionProps = item.props as ViewSectionProps;
 				if (item.id === -1) {
-					// This is the synthetic section for top-level items, so it should inherit from the Grid.
 					currentSectionInset = gridInset;
 				} else {
-					// This is a user-defined <Grid.Section>. It does not inherit.
-					// If `sectionProps.inset` is undefined, it's treated as "none" by GridItem.
 					currentSectionInset = sectionProps.inset;
 				}
 				newList.push(item);
@@ -30,14 +36,69 @@ export function useGridView(args: () => BaseViewArgs & { columns: number; inset?
 		return newList;
 	});
 
-	type GridMapItem = {
+	const virtualListItems = $derived.by((): VirtualGridItem[] => {
+		const list: VirtualGridItem[] = [];
+		let currentRow: (typeof processedFlatList)[number][] = [];
+
+		for (const item of processedFlatList) {
+			if (item.type === 'header') {
+				if (currentRow.length > 0) {
+					list.push({ id: `row-${list.length}`, type: 'row', items: currentRow });
+					currentRow = [];
+				}
+				list.push({ id: `header-${item.id}`, type: 'header', props: item.props });
+			} else if (item.type === 'item') {
+				currentRow.push(item);
+				if (currentRow.length === columns) {
+					list.push({ id: `row-${list.length}`, type: 'row', items: currentRow });
+					currentRow = [];
+				}
+			}
+		}
+		if (currentRow.length > 0) {
+			list.push({ id: `row-${list.length}`, type: 'row', items: currentRow });
+		}
+		return list;
+	});
+
+	const flatIndexToVirtualRowIndexMap = $derived.by(() => {
+		const map = new Map<number, number>();
+		virtualListItems.forEach((vItem, vIndex) => {
+			if (vItem.type === 'row') {
+				vItem.items.forEach((item) => {
+					const flatIndex = processedFlatList.findIndex((f) => f.id === item.id);
+					if (flatIndex !== -1) {
+						map.set(flatIndex, vIndex);
+					}
+				});
+			}
+		});
+		return map;
+	});
+
+	let vlistInstance = $state<VListHandle | undefined>();
+
+	$effect(() => {
+		if (base.selectedItemIndex >= 0 && vlistInstance) {
+			const virtualRowIndex = flatIndexToVirtualRowIndexMap.get(base.selectedItemIndex);
+			if (virtualRowIndex !== undefined) {
+				vlistInstance.scrollToIndex(virtualRowIndex, { align: 'nearest' });
+			}
+		}
+	});
+
+	const gridMap: {
 		flatListIndex: number;
 		sectionIndex: number;
 		rowIndex: number;
 		colIndex: number;
-	};
-	const gridMap: GridMapItem[] = $derived.by(() => {
-		const newGridMap: GridMapItem[] = [];
+	}[] = $derived.by(() => {
+		const newGridMap: {
+			flatListIndex: number;
+			sectionIndex: number;
+			rowIndex: number;
+			colIndex: number;
+		}[] = [];
 		let sectionIndex = -1,
 			rowIndex = 0,
 			colIndex = 0;
@@ -53,12 +114,6 @@ export function useGridView(args: () => BaseViewArgs & { columns: number; inset?
 			}
 		});
 		return newGridMap;
-	});
-
-	$effect(() => {
-		if (base.selectedItemIndex < 0) return;
-		const elementId = `item-${processedFlatList[base.selectedItemIndex]?.id}`;
-		document.getElementById(elementId)?.scrollIntoView({ block: 'nearest' });
 	});
 
 	const handleKeydown = (event: KeyboardEvent) => {
@@ -124,11 +179,17 @@ export function useGridView(args: () => BaseViewArgs & { columns: number; inset?
 		get flatList() {
 			return processedFlatList;
 		},
+		get virtualListItems() {
+			return virtualListItems;
+		},
 		get selectedItemIndex() {
 			return base.selectedItemIndex;
 		},
 		setSelectedItemIndex: (index: number) => {
 			base.selectedItemIndex = index;
+		},
+		set vlistInstance(instance: VListHandle | undefined) {
+			vlistInstance = instance;
 		},
 		handleKeydown
 	};
