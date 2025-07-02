@@ -155,7 +155,7 @@ export function useCommandPaletteItems({
 			});
 		}
 
-		return items;
+		return [...new Map(items.map((item) => [item.id, item])).values()];
 	});
 
 	return () => ({
