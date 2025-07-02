@@ -2,7 +2,7 @@
 	import type { KeyboardShortcut as KeyboardShortcutType } from '$lib/props/actions';
 	import { DropdownMenuItem, DropdownMenuShortcut } from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
-	import type { ImageLike } from '$lib/props';
+	import type { ImageLike } from '@raycast-linux/protocol';
 	import Icon from '$lib/components/Icon.svelte';
 	import { Kbd } from '$lib/components/ui/kbd';
 	import KeyboardShortcut from '$lib/components/KeyboardShortcut.svelte';

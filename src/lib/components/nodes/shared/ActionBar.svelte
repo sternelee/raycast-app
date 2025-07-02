@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { ImageLike } from '$lib/props';
+	import type { ImageLike } from '@raycast-linux/protocol';
 	import Icon from '$lib/components/Icon.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { ButtonProps } from '$lib/components/ui/button';
