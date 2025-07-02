@@ -14,6 +14,7 @@
 		isPrimaryAction?: boolean;
 		isSecondaryAction?: boolean;
 		displayAs?: 'item' | 'button';
+		style?: 'regular' | 'destructive';
 		onclick: (event: MouseEvent) => void;
 	};
 
@@ -24,17 +25,28 @@
 		isPrimaryAction = false,
 		isSecondaryAction = false,
 		displayAs = 'item',
+		style = 'regular',
 		onclick
 	}: Props = $props();
 </script>
 
 {#if displayAs === 'button'}
-	<Button {onclick} variant="ghost" size="sm">
+	<Button
+		{onclick}
+		variant="ghost"
+		size="sm"
+		class={style === 'destructive' ? 'text-destructive' : ''}
+	>
 		{title}
 		<Kbd>⏎</Kbd>
 	</Button>
 {:else}
-	<DropdownMenuItem class="rounded-md p-2 text-left" {onclick}>
+	<DropdownMenuItem
+		class="rounded-md p-2 text-left {style === 'destructive'
+			? 'text-destructive focus:text-destructive-foreground focus:bg-destructive'
+			: ''}"
+		{onclick}
+	>
 		{#if icon}
 			<Icon {icon} class="size-4" />
 		{/if}

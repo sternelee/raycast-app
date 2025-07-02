@@ -18,7 +18,7 @@ const ActionPush = ({
 	target,
 	...props
 }: {
-	onPush: () => void;
+	onPush?: () => void;
 	target: React.ReactElement;
 }) => {
 	const handleAction = () => {
@@ -31,12 +31,18 @@ const ActionPush = ({
 	return jsx('Action.Push', { ...props, onAction: handleAction });
 };
 
+const Style = {
+	Regular: 'regular',
+	Destructive: 'destructive'
+} as const;
+
 Object.assign(Action, {
 	Paste: ActionPaste,
 	CopyToClipboard: ActionCopy,
 	OpenInBrowser: ActionOpenInBrowser,
 	Push: ActionPush,
-	SubmitForm: ActionSubmitForm
+	SubmitForm: ActionSubmitForm,
+	Style
 });
 Object.assign(ActionPanel, {
 	Section: ActionPanelSection,

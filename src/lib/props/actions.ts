@@ -32,10 +32,13 @@ export const keyEventMatches = (event: KeyboardEvent, shortcut: KeyboardShortcut
 	return modifierMatch;
 };
 
+const ActionStyleSchema = z.enum(['regular', 'destructive']);
+
 export const ActionPropsSchema = z.object({
 	title: z.string(),
 	icon: ImageLikeSchema.optional(),
-	shortcut: KeyboardShortcutSchema.optional()
+	shortcut: KeyboardShortcutSchema.optional(),
+	style: ActionStyleSchema.optional()
 });
 export type ActionProps = z.infer<typeof ActionPropsSchema>;
 
@@ -61,7 +64,6 @@ export const ActionOpenInBrowserPropsSchema = z.object({
 });
 export type ActionOpenInBrowserProps = z.infer<typeof ActionOpenInBrowserPropsSchema>;
 
-const ActionStyleSchema = z.enum(['regular', 'destructive']);
 export const ActionSubmitFormPropsSchema = z.object({
 	title: z.string().optional(),
 	icon: ImageLikeSchema.optional(),

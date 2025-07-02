@@ -99,5 +99,6 @@
 		{isSecondaryAction}
 		{displayAs}
 		onclick={handleClick}
+		style={'style' in componentProps ? componentProps.style : 'regular'}
 	/>
 {/if}
