@@ -176,7 +176,7 @@ class SidecarService {
 
 		if (!result.success) {
 			this.#log(`ERROR: Received invalid message from sidecar: ${result.error.message}`);
-			console.error('Invalid sidecar message:', result.error);
+			console.error('Invalid sidecar message:', message);
 			return;
 		}
 

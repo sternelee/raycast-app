@@ -44,7 +44,7 @@ export * from './detail';
 export * from './grid';
 export * from './list';
 export * from './form';
-export * from './image';
+export * from '@raycast-linux/protocol';
 export * from './color';
 export * from './dropdown';
 export * from './section';

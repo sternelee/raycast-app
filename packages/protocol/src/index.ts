@@ -7,3 +7,4 @@ export * from './main';
 export * from './plugin';
 export * from './preferences';
 export * from './toast';
+export * from './image';

@@ -1,4 +1,5 @@
 import { z } from 'zod/v4';
+import { ImageLikeSchema } from './image';
 
 export const OpenPayloadSchema = z.object({
 	target: z.string(),
@@ -93,7 +94,7 @@ export const ClipboardClearMessageSchema = z.object({
 export const OauthAuthorizePayloadSchema = z.object({
 	url: z.string(),
 	providerName: z.string(),
-	providerIcon: z.string().optional(),
+	providerIcon: ImageLikeSchema.optional(),
 	description: z.string().optional()
 });
 export const OauthAuthorizeMessageSchema = z.object({

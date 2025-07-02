@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { ImageLikeSchema } from './image';
+import { ImageLikeSchema } from '@raycast-linux/protocol';
 
 const KeyModifierSchema = z.enum(['cmd', 'ctrl', 'opt', 'shift']);
 const KeyEquivalentSchema = z.string();
