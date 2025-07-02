@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use rusqlite::{Connection, Result as RusqliteResult, Row, ToSql};
+use rusqlite::{Connection, Result as RusqliteResult, Row};
 use std::sync::{Mutex, MutexGuard};
 use tauri::{AppHandle, Manager};
 
@@ -23,6 +23,12 @@ impl Store {
         let db_path = data_dir.join(db_filename);
         let db = Connection::open(db_path)?;
 
+        Ok(Self { db: Mutex::new(db) })
+    }
+
+    #[cfg(test)]
+    pub fn new_in_memory() -> Result<Self, AppError> {
+        let db = Connection::open_in_memory()?;
         Ok(Self { db: Mutex::new(db) })
     }
 

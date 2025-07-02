@@ -5,7 +5,7 @@ use super::{
 };
 use crate::error::AppError;
 use crate::store::Store;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use rusqlite::{params, Result as RusqliteResult};
 use std::path::PathBuf;
@@ -51,8 +51,8 @@ fn row_to_clipboard_item(row: &rusqlite::Row, key: &[u8; 32]) -> RusqliteResult<
         preview,
         content_size_bytes: row.get(8)?,
         source_app_name: row.get(3)?,
-        first_copied_at: chrono::DateTime::from_timestamp(first_ts, 0).unwrap_or_default(),
-        last_copied_at: chrono::DateTime::from_timestamp(last_ts, 0).unwrap_or_default(),
+        first_copied_at: DateTime::from_timestamp_nanos(first_ts),
+        last_copied_at: DateTime::from_timestamp_nanos(last_ts),
         times_copied: row.get(6)?,
         is_pinned: row.get::<_, i32>(7)? == 1,
     })
@@ -79,6 +79,23 @@ impl ClipboardHistoryManager {
         })
     }
 
+    #[cfg(test)]
+    pub fn new_for_test() -> Result<Self, AppError> {
+        let temp_dir = std::env::temp_dir().join(format!("raycast_test_{}", rand::random::<u32>()));
+        std::fs::create_dir_all(&temp_dir)?;
+
+        let store = Store::new_in_memory()?;
+        store.init_table(CLIPBOARD_SCHEMA)?;
+
+        let key: [u8; 32] = [0; 32];
+
+        Ok(Self {
+            store,
+            key,
+            image_dir: temp_dir,
+        })
+    }
+
     pub fn add_item(
         &self,
         hash: String,
@@ -87,7 +104,7 @@ impl ClipboardHistoryManager {
         source_app_name: Option<String>,
     ) -> Result<(), AppError> {
         let db = self.store.conn();
-        let now = Utc::now();
+        let now_nanos = Utc::now().timestamp_nanos_opt().unwrap_or_default();
 
         let existing_item: RusqliteResult<i64> = db.query_row(
             "SELECT id FROM clipboard_history WHERE hash = ?",
@@ -98,7 +115,7 @@ impl ClipboardHistoryManager {
         if let Ok(_id) = existing_item {
             db.execute(
                 "UPDATE clipboard_history SET last_copied_at = ?, times_copied = times_copied + 1 WHERE hash = ?",
-                params![now.timestamp(), &hash],
+                params![now_nanos, &hash],
             )?;
         } else {
             let content_size_bytes = content_value.len() as i64;
@@ -115,7 +132,7 @@ impl ClipboardHistoryManager {
             db.execute(
                 "INSERT INTO clipboard_history (hash, content_type, encrypted_content, encrypted_preview, content_size_bytes, source_app_name, first_copied_at, last_copied_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                params![hash, content_type.as_str(), encrypted_content, encrypted_preview, content_size_bytes, source_app_name, now.timestamp(), now.timestamp()],
+                params![hash, content_type.as_str(), encrypted_content, encrypted_preview, content_size_bytes, source_app_name, now_nanos, now_nanos],
             )?;
         }
         Ok(())
@@ -206,7 +223,7 @@ impl ClipboardHistoryManager {
     pub fn item_was_copied(&self, id: i64) -> RusqliteResult<usize> {
         self.store.conn().execute(
             "UPDATE clipboard_history SET last_copied_at = ?, times_copied = times_copied + 1 WHERE id = ?",
-            params![Utc::now().timestamp(), id],
+            params![Utc::now().timestamp_nanos_opt().unwrap_or_default(), id],
         )
     }
 

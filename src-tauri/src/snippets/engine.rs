@@ -98,7 +98,6 @@ impl ExpansionEngine {
                     let manager = self.snippet_manager.clone();
                     drop(buffer);
                     self.expand_snippet(&keyword, &content);
-                    // run in a separate thread to not block input
                     thread::spawn(move || {
                         let _ = manager.snippet_was_used(id);
                     });
@@ -308,7 +307,7 @@ fn resolve_value<'a>(
             if let Some(name) = placeholder.attributes.get("name") {
                 if let Some(snippet) = snippet_manager.find_snippet_by_name(name)? {
                     if PLACEHOLDER_REGEX.is_match(&snippet.content) {
-                        return Ok(String::new()); // prevent recursion
+                        return Ok(String::new());
                     }
                     return Ok(snippet.content);
                 }
@@ -429,4 +428,152 @@ pub fn parse_and_resolve_placeholders(
         content: resolved_content,
         cursor_pos,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::clipboard_history::types::ContentType;
+
+    #[test]
+    fn test_plain_text() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "Just some plain text.";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, "Just some plain text.");
+        assert_eq!(result.cursor_pos, None);
+    }
+
+    #[test]
+    fn test_cursor_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "Hello, {cursor}World!";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, "Hello, World!");
+        assert_eq!(result.cursor_pos, Some(7));
+    }
+
+    #[test]
+    fn test_multiple_cursor_placeholders() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "{cursor} first, then {cursor} second";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, " first, then  second");
+        assert_eq!(result.cursor_pos, Some(0));
+    }
+
+    #[test]
+    fn test_uuid_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "{uuid}";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert!(Uuid::parse_str(&result.content).is_ok());
+    }
+
+    #[test]
+    fn test_clipboard_offset_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let clipboard_manager = ClipboardHistoryManager::new_for_test().unwrap();
+        clipboard_manager
+            .add_item("hash1".into(), ContentType::Text, "Item 1".into(), None)
+            .unwrap();
+        thread::sleep(std::time::Duration::from_millis(1));
+        clipboard_manager
+            .add_item("hash0".into(), ContentType::Text, "Item 0".into(), None)
+            .unwrap();
+
+        let content = "Clipboard item at offset 1 is: {clipboard offset=\"1\"}";
+        let result =
+            parse_and_resolve_placeholders(content, &snippet_manager, Some(&clipboard_manager))
+                .unwrap();
+
+        assert_eq!(result.content, "Clipboard item at offset 1 is: Item 1");
+    }
+
+    #[test]
+    fn test_snippet_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        snippet_manager
+            .create_snippet("Greeting".into(), "greet".into(), "Hello, there!".into())
+            .unwrap();
+
+        let content = "I'd like to say: {snippet name=\"Greeting\"}";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+
+        assert_eq!(result.content, "I'd like to say: Hello, there!");
+    }
+
+    #[test]
+    fn test_recursive_snippet_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        snippet_manager
+            .create_snippet(
+                "recursion".into(),
+                "recur".into(),
+                "Oh no {snippet name=\"recursion\"}".into(),
+            )
+            .unwrap();
+
+        let content = "{snippet name=\"recursion\"}";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+
+        assert_eq!(result.content, "");
+    }
+
+    #[test]
+    fn test_modifiers() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "{snippet name=\"test\" | uppercase | trim}";
+        snippet_manager
+            .create_snippet("test".into(), "test".into(), "  some text  ".into())
+            .unwrap();
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, "SOME TEXT");
+    }
+
+    #[test]
+    fn test_json_stringify_modifier() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "{snippet name=\"json\" | json-stringify}";
+        snippet_manager
+            .create_snippet("json".into(), "json".into(), "line1\nline2".into())
+            .unwrap();
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, "\"line1\\nline2\"");
+    }
+
+    #[test]
+    fn test_translate_date_format_string() {
+        let raycast_format = "MMMM dd, yyyy 'at' hh:mm:ss a";
+        let strftime_format = translate_date_format(raycast_format);
+        assert_eq!(strftime_format, "%B %d, %Y at %I:%M:%S %p");
+    }
+
+    #[test]
+    fn test_date_with_format_and_offset() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "{date offset=\"+1d\" format=\"yyyy-MM-dd\"}";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+
+        let tomorrow = Local::now().checked_add_signed(Duration::days(1)).unwrap();
+        let expected = tomorrow.format("%Y-%m-%d").to_string();
+
+        assert_eq!(result.content, expected);
+    }
+
+    #[test]
+    fn test_invalid_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "Hello, {invalid_placeholder}!";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, "Hello, !");
+    }
+
+    #[test]
+    fn test_unclosed_placeholder() {
+        let snippet_manager = SnippetManager::new_for_test().unwrap();
+        let content = "Hello, {unclosed";
+        let result = parse_and_resolve_placeholders(content, &snippet_manager, None).unwrap();
+        assert_eq!(result.content, "Hello, {unclosed");
+    }
 }

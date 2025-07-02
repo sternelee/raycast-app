@@ -43,7 +43,6 @@ impl SnippetManager {
         let store = Store::new(app_handle, "snippets.sqlite")?;
         store.init_table(SNIPPETS_SCHEMA)?;
 
-        // Handle simple schema migrations in a block to drop the lock
         {
             let db = store.conn();
             let mut stmt = db.prepare("PRAGMA table_info(snippets)")?;
@@ -63,6 +62,28 @@ impl SnippetManager {
                     [],
                 )?;
             }
+        }
+
+        Ok(Self {
+            store: Arc::new(store),
+        })
+    }
+
+    #[cfg(test)]
+    pub fn new_for_test() -> Result<Self, AppError> {
+        let store = Store::new_in_memory()?;
+        store.init_table(SNIPPETS_SCHEMA)?;
+
+        {
+            let db = store.conn();
+            db.execute(
+                "ALTER TABLE snippets ADD COLUMN times_used INTEGER NOT NULL DEFAULT 0",
+                [],
+            )?;
+            db.execute(
+                "ALTER TABLE snippets ADD COLUMN last_used_at INTEGER NOT NULL DEFAULT 0",
+                [],
+            )?;
         }
 
         Ok(Self {
@@ -131,7 +152,7 @@ impl SnippetManager {
         Ok(())
     }
 
-    pub fn find_snippet_by_keyword(&self, keyword: &str) -> Result<Option<Snippet>, AppError> {
+    fn find_snippet_by_keyword(&self, keyword: &str) -> Result<Option<Snippet>, AppError> {
         self.store.query_row(
             "SELECT id, name, keyword, content, created_at, updated_at, times_used, last_used_at FROM snippets WHERE keyword = ?1",
             params![keyword],

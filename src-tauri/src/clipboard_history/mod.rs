@@ -1,7 +1,7 @@
 mod encryption;
 pub mod manager;
 mod monitor;
-mod types;
+pub mod types;
 
 pub use manager::init;
 use manager::MANAGER;
