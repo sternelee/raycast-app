@@ -171,15 +171,15 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <main class="bg-background text-foreground h-screen">
-	<Tabs.Root bind:value={activeTab} class="h-full p-6">
-		<Tabs.List class="mx-auto mb-6">
+	<Tabs.Root bind:value={activeTab} class="h-full pt-2">
+		<Tabs.List class="mx-auto">
 			<Tabs.Trigger value="extensions">Extensions</Tabs.Trigger>
 			<Tabs.Trigger value="ai">AI</Tabs.Trigger>
 		</Tabs.List>
 		<Tabs.Content value="ai">
 			<AiSettingsView />
 		</Tabs.Content>
-		<Tabs.Content value="extensions" class="flex">
+		<Tabs.Content value="extensions" class="flex h-full">
 			<div class="flex w-80 flex-col border-r">
 				<header class="mb-2 flex h-15 shrink-0 items-center border-b">
 					<button onclick={onBack} class="hover:bg-accent mr-2 rounded p-1">
@@ -223,7 +223,7 @@
 				</div>
 			</div>
 
-			<div class="flex flex-1 flex-col overflow-y-auto">
+			<div class="flex h-full flex-1 flex-col overflow-y-auto px-4">
 				{#if selectedItem}
 					<div>
 						<div class="mb-6 flex items-start justify-between">
