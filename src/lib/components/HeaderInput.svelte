@@ -2,7 +2,12 @@
 	import { Input, type InputProps } from '$lib/components/ui/input';
 	import { cn } from '$lib/utils';
 
-	let { value = $bindable(), ref = $bindable(), class: className, ...rest }: InputProps = $props();
+	let {
+		value = $bindable(),
+		ref = $bindable(null),
+		class: className,
+		...rest
+	}: InputProps = $props();
 </script>
 
 <Input
