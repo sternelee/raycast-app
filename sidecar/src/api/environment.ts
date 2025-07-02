@@ -46,11 +46,11 @@ export const environment = {
 };
 
 export async function getSelectedFinderItems(): Promise<FileSystemItem[]> {
-	return sendRequest<FileSystemItem[]>('system-get-selected-finder-items');
+	return sendRequest<FileSystemItem[]>('get-selected-finder-items');
 }
 
 export async function getSelectedText(): Promise<string> {
-	return sendRequest<string>('system-get-selected-text');
+	return sendRequest<string>('get-selected-text');
 }
 
 export async function open(target: string, application?: Application | string): Promise<void> {
