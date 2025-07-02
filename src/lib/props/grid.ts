@@ -1,3 +1,4 @@
+import { ImageLikeSchema } from '@raycast-linux/protocol';
 import { z } from 'zod/v4';
 
 export const GridInsetSchema = z.enum(['small', 'medium', 'large']);
@@ -15,7 +16,7 @@ export const GridPropsSchema = z.object({
 export type GridProps = z.infer<typeof GridPropsSchema>;
 
 export const GridItemPropsSchema = z.object({
-	content: z.string(),
+	content: ImageLikeSchema,
 	title: z.string().optional(),
 	subtitle: z.string().optional(),
 	keywords: z.array(z.string())

@@ -3,6 +3,7 @@
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import { cn } from '$lib/utils';
 	import type { GridInset } from '$lib/props/grid';
+	import Icon from '../Icon.svelte';
 
 	type Props = {
 		props: GridItemProps;
@@ -27,12 +28,12 @@
 </script>
 
 <button type="button" class={cn('flex w-full flex-col text-left', paddingClass)} {...restProps}>
-	<img
-		src={props.content}
-		alt={props.title}
-		class="hover:border-foreground/50 bg-muted mb-1 size-[115px] rounded-md border-2 border-transparent"
+	<div
+		class="hover:border-foreground/50 bg-muted mb-1 aspect-square w-full rounded-md border-2 border-transparent"
 		class:!border-foreground={selected}
-	/>
+	>
+		<Icon icon={props.content} class="size-full" />
+	</div>
 
 	{#if props.title}
 		<span class="text-sm font-medium">{props.title}</span>
