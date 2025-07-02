@@ -86,3 +86,97 @@ impl AppCache {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use std::thread;
+    use std::time::Duration;
+
+    fn setup_temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "raycast_test_cache_{}_{}",
+            name,
+            rand::random::<u32>()
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn test_cache_file_roundtrip() {
+        let temp_dir = setup_temp_dir("roundtrip");
+        let cache_path = temp_dir.join("test_cache.bincode");
+
+        let mut dir_mod_times = HashMap::new();
+        dir_mod_times.insert(PathBuf::from("/test/path"), SystemTime::now());
+
+        let original_cache = AppCache {
+            apps: vec![App::new("TestApp".to_string())],
+            dir_mod_times,
+        };
+
+        original_cache.write_to_file(&cache_path).unwrap();
+
+        let read_cache = AppCache::read_from_file(&cache_path).unwrap();
+
+        assert_eq!(original_cache.apps.len(), read_cache.apps.len());
+        assert_eq!(original_cache.apps[0].name, read_cache.apps[0].name);
+        assert_eq!(original_cache.dir_mod_times, read_cache.dir_mod_times);
+
+        fs::remove_dir_all(temp_dir).unwrap();
+    }
+
+    fn get_mock_app_directories(mock_dir: PathBuf) -> Vec<PathBuf> {
+        vec![mock_dir]
+    }
+
+    fn is_stale_mock(cache: &AppCache, mock_dir: PathBuf) -> bool {
+        get_mock_app_directories(mock_dir).into_iter().any(|dir| {
+            let current_mod_time = fs::metadata(&dir).ok().and_then(|m| m.modified().ok());
+            let cached_mod_time = cache.dir_mod_times.get(&dir);
+            match (current_mod_time, cached_mod_time) {
+                (Some(current), Some(cached)) => current > *cached,
+                _ => true,
+            }
+        })
+    }
+
+    #[test]
+    fn test_is_stale_logic() {
+        let temp_dir = setup_temp_dir("is_stale");
+
+        let mod_time_before = fs::metadata(&temp_dir).unwrap().modified().unwrap();
+        let mut dir_mod_times = HashMap::new();
+        dir_mod_times.insert(temp_dir.clone(), mod_time_before);
+        let cache = AppCache {
+            apps: vec![],
+            dir_mod_times,
+        };
+        assert!(!is_stale_mock(&cache, temp_dir.clone()));
+
+        thread::sleep(Duration::from_millis(10));
+        let mut file = fs::File::create(temp_dir.join("test.txt")).unwrap();
+        file.write_all(b"Hello, world!").unwrap();
+        drop(file);
+        assert!(is_stale_mock(&cache, temp_dir.clone()));
+
+        let mod_time_after = fs::metadata(&temp_dir).unwrap().modified().unwrap();
+        let mut new_dir_mod_times = HashMap::new();
+        new_dir_mod_times.insert(temp_dir.clone(), mod_time_after);
+        let cache_updated = AppCache {
+            apps: vec![],
+            dir_mod_times: new_dir_mod_times,
+        };
+        assert!(!is_stale_mock(&cache_updated, temp_dir.clone()));
+
+        let cache_missing_entry = AppCache {
+            apps: vec![],
+            dir_mod_times: HashMap::new(),
+        };
+        assert!(is_stale_mock(&cache_missing_entry, temp_dir.clone()));
+
+        fs::remove_dir_all(temp_dir).unwrap();
+    }
+}
