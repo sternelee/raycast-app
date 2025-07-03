@@ -70,7 +70,7 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape') {
+		if (event.key === 'Escape' && !event.defaultPrevented) {
 			if (event.defaultPrevented) {
 				return;
 			}

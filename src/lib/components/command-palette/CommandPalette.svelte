@@ -113,11 +113,6 @@
 	}
 
 	async function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && searchText) {
-			e.preventDefault();
-			searchText = '';
-		}
-
 		if (!selectedItem) return;
 
 		const keyMap = {

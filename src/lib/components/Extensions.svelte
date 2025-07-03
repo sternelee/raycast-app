@@ -38,7 +38,7 @@
 	};
 
 	function handleGlobalKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Escape') {
+		if (e.key === 'Escape' && !e.defaultPrevented) {
 			e.preventDefault();
 			if (expandedImageUrl) {
 				expandedImageUrl = null;

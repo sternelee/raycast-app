@@ -19,4 +19,12 @@
 	bind:ref
 	bind:value
 	{...rest}
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && value) {
+			e.preventDefault();
+			value = '';
+		}
+
+		rest.onkeydown?.(e);
+	}}
 />
