@@ -25,6 +25,10 @@ export function sendRequest<T>(type: string, payload: object = {}): Promise<T> {
 	});
 }
 
+export function invokeCommand<T>(command: string, params: object = {}): Promise<T> {
+	return sendRequest<T>('invoke_command', { command, params });
+}
+
 export function handleResponse(requestId: string, result: unknown, error?: string) {
 	const promise = pendingRequests.get(requestId);
 	if (promise) {

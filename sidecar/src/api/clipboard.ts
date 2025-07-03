@@ -1,4 +1,4 @@
-import { sendRequest } from './rpc';
+import { invokeCommand } from './rpc';
 import type * as api from '@raycast/api';
 
 type ClipboardContent = {
@@ -23,20 +23,20 @@ function normalizeContent(content: string | number | api.Clipboard.Content): Cli
 export const Clipboard: typeof api.Clipboard = {
 	async copy(content, options) {
 		const normalized = normalizeContent(content);
-		return sendRequest<void>('clipboard-copy', { content: normalized, options });
+		return invokeCommand<void>('clipboard_copy', { content: normalized, options });
 	},
 	async paste(content) {
 		const normalized = normalizeContent(content);
-		return sendRequest<void>('clipboard-paste', { content: normalized });
+		return invokeCommand<void>('clipboard_paste', { content: normalized });
 	},
 	async clear() {
-		return sendRequest<void>('clipboard-clear', {});
+		return invokeCommand<void>('clipboard_clear', {});
 	},
 	async read(options) {
-		return sendRequest<ReadResult>('clipboard-read', { offset: options?.offset });
+		return invokeCommand<ReadResult>('clipboard_read', { offset: options?.offset });
 	},
 	async readText(options) {
-		const result = await sendRequest<ReadResult>('clipboard-read-text', {
+		const result = await invokeCommand<ReadResult>('clipboard_read_text', {
 			offset: options?.offset
 		});
 		return result.text;

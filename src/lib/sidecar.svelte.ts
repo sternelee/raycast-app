@@ -215,6 +215,20 @@ class SidecarService {
 			return;
 		}
 
+		if (typedMessage.type === 'invoke_command') {
+			const { requestId, command, params } = typedMessage.payload;
+			const responseType = `invoke_command-response`;
+			try {
+				const result = await invoke(command, params);
+				this.dispatchEvent(responseType, { requestId, result });
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				this.#log(`ERROR from ${command}: ${errorMessage}`);
+				this.dispatchEvent(responseType, { requestId, error: errorMessage });
+			}
+			return;
+		}
+
 		if (typedMessage.type === 'ai-ask-stream') {
 			const { requestId, prompt, options } = typedMessage.payload as {
 				requestId: string;
@@ -253,42 +267,6 @@ class SidecarService {
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				this.#log(`ERROR from ai_can_access: ${errorMessage}`);
-				this.dispatchEvent(responseType, { requestId, error: errorMessage });
-			}
-			return;
-		}
-
-		if (typedMessage.type.startsWith('system-')) {
-			const { requestId, ...params } = typedMessage.payload as {
-				requestId: string;
-				[key: string]: unknown;
-			};
-			const command = typedMessage.type.replace('system-', '').replace(/-/g, '_');
-			const responseType = `${typedMessage.type}-response`;
-			try {
-				const result = await invoke(command, params);
-				this.dispatchEvent(responseType, { requestId, result });
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : String(error);
-				this.#log(`ERROR from ${command}: ${errorMessage}`);
-				this.dispatchEvent(responseType, { requestId, error: errorMessage });
-			}
-			return;
-		}
-
-		if (typedMessage.type.startsWith('clipboard-')) {
-			const { requestId, ...params } = typedMessage.payload as {
-				requestId: string;
-				[key: string]: unknown;
-			};
-			const command = typedMessage.type.replace(/-/g, '_');
-			const responseType = `${typedMessage.type}-response`;
-			try {
-				const result = await invoke(command, params);
-				this.dispatchEvent(responseType, { requestId, result });
-			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : String(error);
-				this.#log(`ERROR from ${command}: ${errorMessage}`);
 				this.dispatchEvent(responseType, { requestId, error: errorMessage });
 			}
 			return;
@@ -340,44 +318,6 @@ class SidecarService {
 			if (this.#onGoBackToPluginList) {
 				this.#onGoBackToPluginList();
 			}
-			return;
-		}
-
-		if (typedMessage.type === 'get-selected-text') {
-			const { requestId } = typedMessage.payload;
-			invoke('get_selected_text')
-				.then((text) => {
-					this.dispatchEvent('selected-text-response', {
-						requestId,
-						text
-					});
-				})
-				.catch((error) => {
-					this.#log(`ERROR getting selected text: ${error}`);
-					this.dispatchEvent('selected-text-response', {
-						requestId,
-						error: String(error)
-					});
-				});
-			return;
-		}
-
-		if (typedMessage.type === 'get-selected-finder-items') {
-			const { requestId } = typedMessage.payload;
-			invoke('get_selected_finder_items')
-				.then((items) => {
-					this.dispatchEvent('selected-finder-items-response', {
-						requestId,
-						items
-					});
-				})
-				.catch((error) => {
-					this.#log(`ERROR getting selected finder items: ${error}`);
-					this.dispatchEvent('selected-finder-items-response', {
-						requestId,
-						error: String(error)
-					});
-				});
 			return;
 		}
 
