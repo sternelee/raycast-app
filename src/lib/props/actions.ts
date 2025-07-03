@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { ImageLikeSchema } from '@raycast-linux/protocol';
+import { platform } from '@tauri-apps/plugin-os';
 
 const KeyModifierSchema = z.enum(['cmd', 'ctrl', 'opt', 'shift']);
 const KeyEquivalentSchema = z.string();
@@ -11,25 +12,24 @@ export const KeyboardShortcutSchema = z.object({
 export type KeyboardShortcut = z.infer<typeof KeyboardShortcutSchema>;
 
 export const keyEventMatches = (event: KeyboardEvent, shortcut: KeyboardShortcut) => {
-	const modifierMap = {
-		cmd: 'metaKey',
-		ctrl: 'ctrlKey',
-		opt: 'altKey',
-		shift: 'shiftKey'
-	} as const;
+	if (event.key.toLowerCase() !== shortcut.key.toLowerCase()) {
+		return false;
+	}
 
-	const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase();
-	if (!keyMatch) return false;
+	const isMac = platform() === 'macos';
+	const required = new Set(shortcut.modifiers);
 
-	const modifierMatch = Object.entries(modifierMap).every(([modifier, key]) => {
-		const isModifierRequired = shortcut.modifiers.includes(
-			modifier as z.infer<typeof KeyModifierSchema>
-		);
-		const isModifierPressed = event[key];
-		return isModifierRequired === isModifierPressed;
-	});
+	const metaExpected = isMac ? required.has('cmd') : false;
+	const ctrlExpected = isMac ? required.has('ctrl') : required.has('cmd') || required.has('ctrl');
+	const altExpected = required.has('opt');
+	const shiftExpected = required.has('shift');
 
-	return modifierMatch;
+	return (
+		event.metaKey === metaExpected &&
+		event.ctrlKey === ctrlExpected &&
+		event.altKey === altExpected &&
+		event.shiftKey === shiftExpected
+	);
 };
 
 const ActionStyleSchema = z.enum(['regular', 'destructive']);
