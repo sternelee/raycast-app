@@ -11,6 +11,16 @@
 	import { focusManager } from '$lib/focus.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { sidecarService } from '$lib/sidecar.svelte';
+	import {
+		keyEventMatches,
+		type KeyboardShortcut,
+		getTypedProps,
+		type ComponentType,
+		type ActionCopyToClipboardProps,
+		type ActionOpenInBrowserProps
+	} from '$lib/props';
+	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+	import { openUrl } from '@tauri-apps/plugin-opener';
 
 	const {
 		uiTree,
@@ -76,6 +86,41 @@
 			}
 			onPopView();
 			return;
+		}
+
+		for (const actionNode of allActions) {
+			const props = getTypedProps({ ...actionNode, type: actionNode.type as ComponentType });
+			if (props && 'shortcut' in props && props.shortcut) {
+				if (keyEventMatches(event, props.shortcut as KeyboardShortcut)) {
+					event.preventDefault();
+
+					switch (actionNode.type) {
+						case 'Action.CopyToClipboard': {
+							const copyProps = props as ActionCopyToClipboardProps;
+							writeText(copyProps.content);
+							handleDispatch(actionNode.id, 'onCopy', []);
+							break;
+						}
+						case 'Action.OpenInBrowser': {
+							const openProps = props as ActionOpenInBrowserProps;
+							openUrl(openProps.url);
+							handleDispatch(actionNode.id, 'onOpenInBrowser', []);
+							break;
+						}
+						case 'Action.SubmitForm': {
+							handleDispatch(actionNode.id, 'onSubmit', []);
+							break;
+						}
+						case 'Action.Push':
+						case 'Action':
+						default: {
+							handleDispatch(actionNode.id, 'onAction', []);
+							break;
+						}
+					}
+					return;
+				}
+			}
 		}
 	}
 
