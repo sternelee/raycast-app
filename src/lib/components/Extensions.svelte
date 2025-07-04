@@ -80,25 +80,16 @@
 <svelte:window onkeydown={handleGlobalKeyDown} />
 
 <main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="relative mb-2 flex h-15 shrink-0 items-center border-b">
+	<header class="relative flex h-15 shrink-0 items-center pr-4 pl-[18px]">
 		<Button
-			variant="ghost"
 			size="icon"
 			onclick={() => (selectedExtension ? (selectedExtension = null) : onBack())}
+			variant="secondary"
+			class="size-6"
 		>
-			<ArrowLeft class="size-5" />
+			<Icon icon="arrow-left-16" />
 		</Button>
-		{#if selectedExtension}
-			<div class="flex items-center gap-3 px-2">
-				<Icon
-					icon={selectedExtension.icons.light
-						? { source: selectedExtension.icons.light, mask: 'circle' }
-						: undefined}
-					class="size-6"
-				/>
-				<h1 class="text-lg font-medium">{selectedExtension.title}</h1>
-			</div>
-		{:else}
+		{#if !selectedExtension}
 			<HeaderInput
 				placeholder="Search Store for extensions..."
 				bind:value={extensionsStore.searchText}
