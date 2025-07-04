@@ -1,17 +1,21 @@
 <script lang="ts">
-	import type { Datum } from '$lib/store';
+	import type { Datum, Command as ExtensionCommand } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
-	import { Download, ArrowUpRight } from '@lucide/svelte';
+	import { ArrowUpRight } from '@lucide/svelte';
 	import Icon from '../Icon.svelte';
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import { Separator } from '../ui/separator';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import ActionBar from '$lib/components/nodes/shared/ActionBar.svelte';
 	import ActionMenu from '../nodes/shared/ActionMenu.svelte';
-	import { DropdownMenuItem } from '../ui/dropdown-menu';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
 	import aiIcon from '$lib/assets/stars-square-1616x16@2x.png';
 	import KeyboardShortcut from '../KeyboardShortcut.svelte';
 	import { uiStore } from '$lib/ui.svelte';
+	import { viewManager } from '$lib/viewManager.svelte';
+	import type { PluginInfo } from '@raycast-linux/protocol';
 
 	type Props = {
 		extension: Datum;
@@ -21,6 +25,8 @@
 	};
 
 	let { extension, isInstalling, onInstall, onOpenLightbox }: Props = $props();
+
+	let openCommandsPopover = $state(false);
 
 	function formatTimeAgo(timestamp: number) {
 		const date = new Date(timestamp * 1000);
@@ -64,6 +70,23 @@
 			(p) => p.author === extension.author.handle && p.pluginName === extension.name
 		)
 	);
+
+	const installedCommandsInfo = $derived(
+		isInstalled
+			? uiStore.pluginList.filter(
+					(p) => p.author === extension.author.handle && p.pluginName === extension.name
+				)
+			: []
+	);
+
+	function handleOpenCommand(command: ExtensionCommand) {
+		const pluginInfo = installedCommandsInfo.find((p) => p.commandName === command.name);
+		if (pluginInfo) {
+			viewManager.runPlugin(pluginInfo);
+		} else {
+			console.error('Could not find installed plugin info for command', command);
+		}
+	}
 </script>
 
 <div class="flex grow flex-col gap-6 overflow-y-auto p-6">
@@ -245,16 +268,64 @@
 	icon={extension.icons.light ? { source: extension.icons.light, mask: 'circle' } : undefined}
 >
 	{#snippet primaryAction({ props })}
-		<Button {...props} onclick={onInstall} disabled={isInstalling}>
-			{isInstalling ? 'Installing...' : 'Install Extension'}
-			<KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
-		</Button>
+		{#if isInstalled}
+			<Popover.Root bind:open={openCommandsPopover}>
+				<Popover.Trigger>
+					{#snippet child({ props: triggerProps })}
+						<Button {...triggerProps} {...props}>
+							Open Commands...
+							<KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
+						</Button>
+					{/snippet}
+				</Popover.Trigger>
+				<Popover.Content class="w-80 p-0" side="top" align="start">
+					<Command.Root>
+						<Command.Input placeholder="Search commands..." />
+						<Command.Empty>No results.</Command.Empty>
+						<Command.List>
+							{#each extension.commands as command (command.id)}
+								{@const commandIcon = command.icons.light
+									? { source: command.icons.light, mask: 'roundedRectangle' as const }
+									: undefined}
+								{@const extensionIcon = extension.icons.light
+									? { source: extension.icons.light, mask: 'roundedRectangle' as const }
+									: undefined}
+								<Command.Item
+									value={command.title}
+									onSelect={() => {
+										handleOpenCommand(command);
+										openCommandsPopover = false;
+									}}
+								>
+									<div class="flex items-center gap-2">
+										<Icon
+											icon={commandIcon ?? extensionIcon ?? undefined}
+											class="mr-2 size-[18px]"
+										/>
+										<span>{command.title}</span>
+									</div>
+								</Command.Item>
+							{/each}
+						</Command.List>
+					</Command.Root>
+				</Popover.Content>
+			</Popover.Root>
+		{:else}
+			<Button {...props} onclick={onInstall} disabled={isInstalling}>
+				{isInstalling ? 'Installing...' : 'Install Extension'}
+				<KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
+			</Button>
+		{/if}
 	{/snippet}
 	{#snippet actions()}
 		<ActionMenu>
-			<DropdownMenuItem onclick={onInstall} disabled={isInstalling}>
-				{isInstalling ? 'Installing...' : 'Install Extension'}
-			</DropdownMenuItem>
+			{#if isInstalled}
+				<DropdownMenu.Item>Uninstall Extension</DropdownMenu.Item>
+			{:else}
+				<DropdownMenu.Item onclick={onInstall} disabled={isInstalling}>
+					{isInstalling ? 'Installing...' : 'Install Extension'}
+				</DropdownMenu.Item>
+			{/if}
 		</ActionMenu>
 	{/snippet}
 </ActionBar>
