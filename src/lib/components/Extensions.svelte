@@ -12,6 +12,7 @@
 	import LoadingIndicator from './LoadingIndicator.svelte';
 	import type { VListHandle } from 'virtua/svelte';
 	import HeaderInput from './HeaderInput.svelte';
+	import { viewManager } from '$lib/viewManager.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -24,6 +25,14 @@
 	let expandedImageUrl = $state<string | null>(null);
 	let isInstalling = $state(false);
 	let vlistInstance = $state<VListHandle | null>(null);
+
+	$effect(() => {
+		const ext = viewManager.extensionToSelect;
+		if (ext) {
+			selectedExtension = ext;
+			viewManager.extensionToSelect = null;
+		}
+	});
 
 	const handleScroll = () => {
 		if (!vlistInstance) return;

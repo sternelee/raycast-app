@@ -3,6 +3,9 @@ import { uiStore } from '$lib/ui.svelte';
 import { sidecarService } from '$lib/sidecar.svelte';
 import type { Quicklink } from './quicklinks.svelte';
 import { invoke } from '@tauri-apps/api/core';
+import { extensionsStore } from './components/extensions/store.svelte';
+import { fetch } from '@tauri-apps/plugin-http';
+import { DatumSchema, StoreListingsReturnTypeSchema, type Datum } from '$lib/store';
 
 export type ViewState =
 	| 'command-palette'
@@ -29,6 +32,7 @@ class ViewManager {
 	snippetsForImport = $state<any[] | null>(null);
 	commandToConfirm = $state<PluginInfo | null>(null);
 	pluginToSelectInSettings = $state<string | undefined>(undefined);
+	extensionToSelect = $state<Datum | null>(null);
 
 	oauthState: OauthState = $state(null);
 	oauthStatus: 'initial' | 'authorizing' | 'success' | 'error' = $state('initial');
@@ -46,8 +50,9 @@ class ViewManager {
 		this.pluginToSelectInSettings = pluginName;
 	};
 
-	showExtensions = () => {
+	showExtensions = (extension?: Datum) => {
 		this.currentView = 'extensions-store';
+		this.extensionToSelect = extension ?? null;
 	};
 
 	showClipboardHistory = () => {
@@ -124,12 +129,34 @@ class ViewManager {
 		}
 	};
 
-	handleDeepLink = (url: string, allPlugins: PluginInfo[]) => {
+	handleDeepLink = async (url: string, allPlugins: PluginInfo[]) => {
 		try {
 			const urlObj = new URL(url);
 			if (urlObj.protocol === 'raycast:') {
 				if (urlObj.host === 'extensions') {
 					const parts = urlObj.pathname.split('/').filter(Boolean);
+					if (parts.length === 2) {
+						const [author, extensionSlug] = parts;
+
+						this.showExtensions();
+						extensionsStore.isLoading = true;
+
+						try {
+							const res = await fetch(
+								`https://backend.raycast.com/api/v1/extensions/${author}/${extensionSlug}`
+							);
+							if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+							const parsed = DatumSchema.parse(await res.json());
+
+							this.extensionToSelect = parsed;
+						} catch (e) {
+							console.error('Failed to fetch extension from deeplink', e);
+							extensionsStore.searchText = extensionSlug;
+						} finally {
+							extensionsStore.isLoading = false;
+						}
+						return;
+					}
 					if (parts.length === 3) {
 						const [authorOrOwner, extensionName, commandName] = parts;
 
