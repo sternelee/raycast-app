@@ -48,7 +48,7 @@
 
 {#if iconInfo}
 	{#if iconInfo.type === 'raycast'}
-		<svg class="size-4 shrink-0 {className ?? ''}" {style}>
+		<svg class="size-4 shrink-0 fill-none {className ?? ''}" {style}>
 			<use href="{icons}#{iconInfo.name}"></use>
 		</svg>
 	{:else if iconInfo.type === 'image'}

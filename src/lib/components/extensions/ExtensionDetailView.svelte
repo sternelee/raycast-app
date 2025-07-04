@@ -11,6 +11,7 @@
 	import { DropdownMenuItem } from '../ui/dropdown-menu';
 	import aiIcon from '$lib/assets/stars-square-1616x16@2x.png';
 	import KeyboardShortcut from '../KeyboardShortcut.svelte';
+	import { uiStore } from '$lib/ui.svelte';
 
 	type Props = {
 		extension: Datum;
@@ -57,6 +58,12 @@
 		}
 		return `${Math.floor(seconds)} second${seconds !== 1 ? 's' : ''} ago`;
 	}
+
+	const isInstalled = $derived(
+		uiStore.pluginList.some(
+			(p) => p.author === extension.author.handle && p.pluginName === extension.name
+		)
+	);
 </script>
 
 <div class="flex grow flex-col gap-6 overflow-y-auto p-6">
@@ -97,6 +104,16 @@
 				{/if}
 			</div>
 		</div>
+		{#if isInstalled}
+			<div class="ml-auto flex items-center rounded bg-[#4EF8A7]/15 px-2 text-[#4EF8A7]">
+				<Icon
+					icon={{ source: 'check-circle-16', tintColor: 'raycast-green' }}
+					class="mr-1 size-[18px]"
+				/>
+
+				Installed
+			</div>
+		{/if}
 	</div>
 
 	<Separator />
