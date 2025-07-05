@@ -9,8 +9,8 @@ export type Toast = {
 	title: string;
 	message?: string;
 	style?: 'SUCCESS' | 'FAILURE' | 'ANIMATED';
-	primaryAction?: { title: string; onAction: boolean; shortcut?: KeyboardShortcut };
-	secondaryAction?: { title: string; onAction: boolean; shortcut?: KeyboardShortcut };
+	primaryAction?: { title: string; onAction: () => void; shortcut?: KeyboardShortcut };
+	secondaryAction?: { title: string; onAction: () => void; shortcut?: KeyboardShortcut };
 };
 
 function createUiStore() {

@@ -68,6 +68,12 @@
 				selectedIndex = findNextSelectableIndex(selectedIndex, 1);
 				break;
 			case 'Enter':
+				if (
+					event.target instanceof HTMLElement &&
+					event.target.closest('[data-slot="dropdown-menu-content"]')
+				) {
+					return;
+				}
 				if (selectedIndex !== -1 && isItemSelectable(items[selectedIndex])) {
 					event.preventDefault();
 					onenter(items[selectedIndex]);

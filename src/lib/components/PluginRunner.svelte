@@ -167,28 +167,24 @@
 		{/snippet}
 
 		{#snippet footer()}
-			{#if toastToShow}
-				<Footer toast={toastToShow} {onToastAction} />
-			{:else}
-				<ActionBar title={navigationTitle}>
-					{#snippet primaryAction({ props })}
-						{#if primaryActionObject}
-							<NodeRenderer
-								{...props}
-								nodeId={primaryActionObject.id}
-								{uiTree}
-								onDispatch={handleDispatch}
-								displayAs="button"
-							/>
-						{/if}
-					{/snippet}
-					{#snippet actions()}
-						{#if showActionPanelDropdown && actionPanel}
-							<NodeRenderer nodeId={actionPanel.id} {uiTree} onDispatch={handleDispatch} />
-						{/if}
-					{/snippet}
-				</ActionBar>
-			{/if}
+			<ActionBar title={navigationTitle} toast={toastToShow} {onToastAction}>
+				{#snippet primaryAction({ props })}
+					{#if primaryActionObject}
+						<NodeRenderer
+							{...props}
+							nodeId={primaryActionObject.id}
+							{uiTree}
+							onDispatch={handleDispatch}
+							displayAs="button"
+						/>
+					{/if}
+				{/snippet}
+				{#snippet actions()}
+					{#if showActionPanelDropdown && actionPanel}
+						<NodeRenderer nodeId={actionPanel.id} {uiTree} onDispatch={handleDispatch} />
+					{/if}
+				{/snippet}
+			</ActionBar>
 		{/snippet}
 	</MainLayout>
 {/if}

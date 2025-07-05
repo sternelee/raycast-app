@@ -4,19 +4,26 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import type { ButtonProps } from '$lib/components/ui/button';
+	import type { Toast as ToastType } from '$lib/ui.svelte';
+	import Toast from './Toast.svelte';
 
 	type Props = {
 		title?: string | Snippet;
 		icon?: ImageLike | null;
 		primaryAction?: Snippet<[{ props: ButtonProps }]>;
 		actions?: Snippet;
+
+		toast?: ToastType | null;
+		onToastAction?: (toastId: number, actionType: 'primary' | 'secondary') => void;
 	};
 
-	let { title, icon, primaryAction, actions }: Props = $props();
+	let { title, icon, primaryAction, actions, toast = null, onToastAction }: Props = $props();
 </script>
 
 <footer class="bg-card flex h-10 shrink-0 items-center border-t px-2">
-	{#if title || icon}
+	{#if toast}
+		<Toast {toast} {onToastAction} />
+	{:else if title || icon}
 		<div class="flex min-w-0 items-center gap-2">
 			{#if icon}
 				<Icon {icon} class="size-5 shrink-0" />
