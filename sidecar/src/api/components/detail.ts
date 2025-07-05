@@ -1,18 +1,6 @@
-import { jsx } from 'react/jsx-runtime';
-import { createWrapperComponent, createAccessorySlot } from '../utils';
+import { createWrapperComponent, createSlottedComponent } from '../utils';
 
-const _AccessorySlot = createAccessorySlot();
-
-const DetailPrimitive = createWrapperComponent('Detail');
-const Detail = (props) => {
-	const { metadata, actions, children, ...rest } = props;
-	const metadataElement = metadata && jsx(_AccessorySlot, { name: 'metadata', children: metadata });
-	const actionsElement = actions && jsx(_AccessorySlot, { name: 'actions', children: actions });
-	return jsx(DetailPrimitive, {
-		...rest,
-		children: [children, metadataElement, actionsElement].filter(Boolean)
-	});
-};
+const Detail = createSlottedComponent('Detail', ['metadata', 'actions']);
 
 const DetailMetadata = createWrapperComponent('Detail.Metadata');
 const DetailMetadataLabel = createWrapperComponent('Detail.Metadata.Label');

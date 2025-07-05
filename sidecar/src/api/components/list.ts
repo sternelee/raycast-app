@@ -1,27 +1,7 @@
-import { jsx } from 'react/jsx-runtime';
-import { createWrapperComponent, createAccessorySlot } from '../utils';
+import { createWrapperComponent, createSlottedComponent } from '../utils';
 
-const _AccessorySlot = createAccessorySlot();
-
-const ListPrimitive = createWrapperComponent('List');
-const List = (props) => {
-	const { searchBarAccessory, children, ...rest } = props;
-	const accessoryElement =
-		searchBarAccessory &&
-		jsx(_AccessorySlot, { name: 'searchBarAccessory', children: searchBarAccessory });
-	return jsx(ListPrimitive, { ...rest, children: [children, accessoryElement].filter(Boolean) });
-};
-
-const ListItemPrimitive = createWrapperComponent('List.Item');
-const ListItem = (props) => {
-	const { detail, actions, children, ...rest } = props;
-	const detailElement = detail && jsx(_AccessorySlot, { name: 'detail', children: detail });
-	const actionsElement = actions && jsx(_AccessorySlot, { name: 'actions', children: actions });
-	return jsx(ListItemPrimitive, {
-		...rest,
-		children: [children, detailElement, actionsElement].filter(Boolean)
-	});
-};
+const List = createSlottedComponent('List', ['searchBarAccessory']);
+const ListItem = createSlottedComponent('List.Item', ['detail', 'actions']);
 
 const ListSection = createWrapperComponent('List.Section');
 const ListEmptyView = createWrapperComponent('List.EmptyView');

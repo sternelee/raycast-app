@@ -22,3 +22,21 @@ export const createWrapperComponent = (name: string) => {
 };
 
 export const createAccessorySlot = () => createWrapperComponent('_AccessorySlot');
+
+export const createSlottedComponent = (baseName: string, accessoryPropNames: string[]) => {
+	const _AccessorySlot = createAccessorySlot();
+	const Primitive = createWrapperComponent(baseName);
+	const SlottedComponent = (props: { [key: string]: any; children?: React.ReactNode }) => {
+		const { children, ...rest } = props;
+		const accessoryElements = [];
+		for (const name of accessoryPropNames) {
+			if (rest[name]) {
+				accessoryElements.push(jsx(_AccessorySlot, { name, children: rest[name] }));
+				delete rest[name];
+			}
+		}
+		return jsx(Primitive, { ...rest, children: [children, ...accessoryElements].filter(Boolean) });
+	};
+	SlottedComponent.displayName = baseName;
+	return SlottedComponent;
+};
