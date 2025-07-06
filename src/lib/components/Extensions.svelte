@@ -14,6 +14,14 @@
 	import { viewManager } from '$lib/viewManager.svelte';
 	import ExtensionInstallConfirm from './extensions/ExtensionInstallConfirm.svelte';
 	import { fetch } from '@tauri-apps/plugin-http';
+	import ActionBar from '$lib/components/nodes/shared/ActionBar.svelte';
+	import ActionMenu from '$lib/components/nodes/shared/ActionMenu.svelte';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import KeyboardShortcut from '$lib/components/KeyboardShortcut.svelte';
+	import { openUrl } from '@tauri-apps/plugin-opener';
+	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+	import { keyEventMatches, type KeyboardShortcut as Shortcut } from '$lib/props/actions';
+	import MainLayout from './layout/MainLayout.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -23,6 +31,12 @@
 	type Violation = {
 		commandName: string;
 		reason: string;
+	};
+
+	type DisplayItem = {
+		id: string | number;
+		itemType: 'header' | 'item';
+		data: Extension | string;
 	};
 
 	let { onBack, onInstall }: Props = $props();
@@ -35,6 +49,65 @@
 	let vlistInstance = $state<VListHandle | null>(null);
 	let showConfirmationDialog = $state(false);
 	let confirmationViolations = $state<Violation[]>([]);
+	let extensionForConfirmation = $state<Extension | null>(null);
+
+	let displayedItems = $state<DisplayItem[]>([]);
+
+	$effect(() => {
+		const newItems: DisplayItem[] = [];
+		const addedIds = new Set<string>();
+
+		const addItems = (exts: Extension[]) => {
+			for (const ext of exts) {
+				if (!addedIds.has(ext.id)) {
+					newItems.push({ id: ext.id, itemType: 'item', data: ext });
+					addedIds.add(ext.id);
+				}
+			}
+		};
+
+		if (extensionsStore.searchText) {
+			if (extensionsStore.searchResults.length > 0) {
+				newItems.push({ id: 'header-search', itemType: 'header', data: 'Search Results' });
+				addItems(extensionsStore.searchResults);
+			}
+		} else if (extensionsStore.selectedCategory !== 'All Categories') {
+			const filtered =
+				extensionsStore.extensions.filter(
+					(ext) => ext.categories?.includes(extensionsStore.selectedCategory) ?? false
+				) ?? [];
+			if (filtered.length > 0) {
+				newItems.push({
+					id: `header-${extensionsStore.selectedCategory}`,
+					itemType: 'header',
+					data: extensionsStore.selectedCategory
+				});
+				addItems(filtered);
+			}
+		} else {
+			if (extensionsStore.featuredExtensions.length > 0) {
+				newItems.push({ id: 'header-featured', itemType: 'header', data: 'Featured' });
+				addItems(extensionsStore.featuredExtensions);
+			}
+			if (extensionsStore.trendingExtensions.length > 0) {
+				newItems.push({ id: 'header-trending', itemType: 'header', data: 'Trending' });
+				addItems(extensionsStore.trendingExtensions);
+			}
+			if (extensionsStore.extensions.length > 0) {
+				newItems.push({ id: 'header-all', itemType: 'header', data: 'All Extensions' });
+				addItems(extensionsStore.extensions);
+			}
+		}
+
+		if (!extensionsStore.isSearching) {
+			displayedItems = newItems;
+		}
+	});
+
+	const selectedListItem = $derived(displayedItems[extensionsStore.selectedIndex]);
+	const selectedListExtension = $derived(
+		selectedListItem?.itemType === 'item' ? (selectedListItem.data as Extension) : null
+	);
 
 	$effect(() => {
 		const ext = viewManager.extensionToSelect;
@@ -82,6 +155,33 @@
 		}
 	};
 
+	const openInBrowserShortcut: Shortcut = { modifiers: ['opt', 'ctrl'], key: 'o' };
+	const copyUrlShortcut: Shortcut = { modifiers: ['ctrl'], key: '.' };
+	const viewReadmeShortcut: Shortcut = { modifiers: ['opt', 'shift', 'ctrl'], key: 'r' };
+	const viewSourceShortcut: Shortcut = { modifiers: ['shift', 'ctrl'], key: 'o' };
+
+	function handleOpenInBrowser() {
+		if (!selectedListExtension) return;
+		const { author, name: slug } = selectedListExtension;
+		openUrl(`https://raycast.com/${author.handle}/${slug}`);
+	}
+
+	function handleCopyExtensionUrl() {
+		if (!selectedListExtension) return;
+		const { author, name: slug } = selectedListExtension;
+		writeText(`https://raycast.com/${author.handle}/${slug}`);
+	}
+
+	function handleViewReadme() {
+		if (!selectedListExtension || !selectedListExtension.readme_url) return;
+		openUrl(selectedListExtension.readme_url);
+	}
+
+	function handleViewSourceCode() {
+		if (!selectedListExtension || !selectedListExtension.source_url) return;
+		openUrl(selectedListExtension.source_url);
+	}
+
 	function handleGlobalKeyDown(e: KeyboardEvent) {
 		if (e.key === 'Escape' && !e.defaultPrevented) {
 			e.preventDefault();
@@ -94,11 +194,26 @@
 			}
 			return;
 		}
+
+		if (!selectedExtension && selectedListExtension) {
+			if (keyEventMatches(e, openInBrowserShortcut)) {
+				e.preventDefault();
+				handleOpenInBrowser();
+			} else if (keyEventMatches(e, copyUrlShortcut)) {
+				e.preventDefault();
+				handleCopyExtensionUrl();
+			} else if (keyEventMatches(e, viewReadmeShortcut) && selectedListExtension.readme_url) {
+				e.preventDefault();
+				handleViewReadme();
+			} else if (keyEventMatches(e, viewSourceShortcut) && selectedListExtension.source_url) {
+				e.preventDefault();
+				handleViewSourceCode();
+			}
+		}
 	}
 
-	async function handleInstall() {
-		const extensionToInstall = detailedExtension || selectedExtension;
-		if (!extensionToInstall || isInstalling) return;
+	async function installExtension(extensionToInstall: Extension) {
+		if (isInstalling) return;
 		isInstalling = true;
 		try {
 			const result = await invoke<{
@@ -113,6 +228,7 @@
 			if (result.status === 'success') {
 				onInstall();
 			} else if (result.status === 'requiresConfirmation' && result.violations) {
+				extensionForConfirmation = extensionToInstall;
 				confirmationViolations = result.violations;
 				showConfirmationDialog = true;
 			}
@@ -123,9 +239,16 @@
 		}
 	}
 
+	async function handleInstall() {
+		const extensionToInstall = detailedExtension || selectedExtension;
+		if (extensionToInstall) {
+			await installExtension(extensionToInstall);
+		}
+	}
+
 	async function handleForceInstall() {
 		showConfirmationDialog = false;
-		const extensionToInstall = detailedExtension || selectedExtension;
+		const extensionToInstall = extensionForConfirmation;
 		if (!extensionToInstall) return;
 		isInstalling = true;
 		try {
@@ -145,47 +268,111 @@
 
 <svelte:window onkeydown={handleGlobalKeyDown} />
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="relative flex h-15 shrink-0 items-center pr-4 pl-[18px]">
-		<Button
-			size="icon"
-			onclick={() => (selectedExtension ? (selectedExtension = null) : onBack())}
-			variant="secondary"
-			class="size-6"
-		>
-			<Icon icon="arrow-left-16" />
-		</Button>
-		{#if !selectedExtension}
-			<HeaderInput
-				placeholder="Search Store for extensions..."
-				bind:value={extensionsStore.searchText}
-				autofocus
+<MainLayout>
+	{#snippet header()}
+		<header class="relative flex h-15 shrink-0 items-center pr-4 pl-[18px]">
+			<Button
+				size="icon"
+				onclick={() => (selectedExtension ? (selectedExtension = null) : onBack())}
+				variant="secondary"
+				class="size-6"
+			>
+				<Icon icon="arrow-left-16" />
+			</Button>
+			{#if !selectedExtension}
+				<HeaderInput
+					placeholder="Search Store for extensions..."
+					bind:value={extensionsStore.searchText}
+					autofocus
+				/>
+				<CategoryFilter />
+			{/if}
+			<LoadingIndicator
+				isLoading={(extensionsStore.isLoading && !selectedExtension) || isDetailLoading}
 			/>
-			<CategoryFilter />
-		{/if}
-		<LoadingIndicator
-			isLoading={(extensionsStore.isLoading && !selectedExtension) || isDetailLoading}
-		/>
-	</header>
+		</header>
+	{/snippet}
 
-	{#if selectedExtension}
-		{@const extensionToShow = detailedExtension || selectedExtension}
-		<ExtensionDetailView
-			extension={extensionToShow}
-			{isInstalling}
-			onInstall={handleInstall}
-			onOpenLightbox={(imageUrl) => (expandedImageUrl = imageUrl)}
-		/>
-	{:else}
-		<div class="grow overflow-y-auto" role="listbox" tabindex={-1}>
-			<ExtensionListView
-				onSelect={(ext) => (selectedExtension = ext)}
-				onScroll={handleScroll}
-				bind:vlistInstance
+	{#snippet content()}
+		{#if selectedExtension}
+			{@const extensionToShow = detailedExtension || selectedExtension}
+			<ExtensionDetailView
+				extension={extensionToShow}
+				{isInstalling}
+				onInstall={handleInstall}
+				onOpenLightbox={(imageUrl) => (expandedImageUrl = imageUrl)}
 			/>
-		</div>
-	{/if}
-</main>
+		{:else}
+			<div class="grow overflow-y-auto" role="listbox" tabindex={-1}>
+				<ExtensionListView
+					items={displayedItems}
+					onSelect={(ext) => (selectedExtension = ext)}
+					onScroll={handleScroll}
+					bind:vlistInstance
+				/>
+			</div>
+		{/if}
+	{/snippet}
+
+	{#snippet footer()}
+		{#if !selectedExtension && selectedListExtension}
+			<ActionBar
+				title={selectedListExtension.title}
+				icon={selectedListExtension.icons.light
+					? { source: selectedListExtension.icons.light, mask: 'circle' }
+					: undefined}
+			>
+				{#snippet primaryAction({ props })}
+					<Button {...props} onclick={() => (selectedExtension = selectedListExtension)}>
+						Show Details
+						<KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
+					</Button>
+				{/snippet}
+				{#snippet actions()}
+					<ActionMenu>
+						<DropdownMenu.Item
+							onclick={() => installExtension(selectedListExtension)}
+							disabled={isInstalling}
+						>
+							{isInstalling ? 'Installing...' : 'Install Extension'}
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+						<DropdownMenu.Item onclick={handleOpenInBrowser}>
+							Open in Browser
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'o', modifiers: ['opt', 'ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onclick={handleCopyExtensionUrl}>
+							Copy Extension URL
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: '.', modifiers: ['ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							onclick={handleViewReadme}
+							disabled={!selectedListExtension.readme_url}
+						>
+							View README
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'r', modifiers: ['opt', 'shift', 'ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+						<DropdownMenu.Item
+							onclick={handleViewSourceCode}
+							disabled={!selectedListExtension.source_url}
+						>
+							View Source Code
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'o', modifiers: ['shift', 'ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+					</ActionMenu>
+				{/snippet}
+			</ActionBar>
+		{/if}
+	{/snippet}
+</MainLayout>
 
 {#if expandedImageUrl}
 	<ImageLightbox imageUrl={expandedImageUrl} onClose={() => (expandedImageUrl = null)} />
