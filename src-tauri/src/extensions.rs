@@ -38,6 +38,22 @@ impl IncompatibilityHeuristic for AppleScriptHeuristic {
     }
 }
 
+struct MacOSPathHeuristic;
+impl IncompatibilityHeuristic for MacOSPathHeuristic {
+    fn check(&self, command_title: &str, file_content: &str) -> Option<HeuristicViolation> {
+        let macos_paths = ["/Applications/", "/Library/", "/Users/"];
+        for path in macos_paths {
+            if file_content.contains(path) {
+                return Some(HeuristicViolation {
+                    command_name: command_title.to_string(),
+                    reason: format!("Potential hardcoded macOS path: '{}'", path),
+                });
+            }
+        }
+        None
+    }
+}
+
 fn get_extension_dir(app: &tauri::AppHandle, slug: &str) -> Result<PathBuf, String> {
     let data_dir = app
         .path()
@@ -139,7 +155,7 @@ fn get_commands_from_package_json(
 
 fn run_heuristic_checks(archive_data: &bytes::Bytes) -> Result<Vec<HeuristicViolation>, String> {
     let heuristics: Vec<Box<dyn IncompatibilityHeuristic + Send + Sync>> =
-        vec![Box::new(AppleScriptHeuristic)];
+        vec![Box::new(AppleScriptHeuristic), Box::new(MacOSPathHeuristic)];
     if heuristics.is_empty() {
         return Ok(vec![]);
     }
