@@ -1,11 +1,11 @@
 <script lang="ts">
 	import Icon from '../Icon.svelte';
 	import { Download } from '@lucide/svelte';
-	import type { Datum } from '$lib/store';
+	import type { Extension } from '$lib/store';
 	import ListItemBase from '../nodes/shared/ListItemBase.svelte';
 
 	type Props = {
-		ext: Datum;
+		ext: Extension;
 		isSelected: boolean;
 		onclick?: () => void;
 	};
@@ -16,7 +16,7 @@
 <ListItemBase
 	title={ext.title}
 	subtitle={ext.description}
-	icon={ext.icons.light ? { source: ext.icons.light, mask: 'Circle' } : undefined}
+	icon={ext.icons.light ? { source: ext.icons.light, mask: 'roundedRectangle' } : undefined}
 	{isSelected}
 	{onclick}
 >
@@ -29,7 +29,7 @@
 			{ext.download_count.toLocaleString()}
 		</div>
 		<Icon
-			icon={ext.author.avatar ? { source: ext.author.avatar, mask: 'Circle' } : undefined}
+			icon={ext.author.avatar ? { source: ext.author.avatar, mask: 'circle' } : undefined}
 			class="size-6"
 		/>
 	{/snippet}

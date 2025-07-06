@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { Datum } from '$lib/store';
+	import type { Extension } from '$lib/store';
 	import ExtensionListItem from './ExtensionListItem.svelte';
 	import { extensionsStore } from './store.svelte';
 	import BaseList from '$lib/components/BaseList.svelte';
 	import type { VListHandle } from 'virtua/svelte';
 
 	type Props = {
-		onSelect: (ext: Datum) => void;
+		onSelect: (ext: Extension) => void;
 		onScroll: (offset: number) => void;
 		vlistInstance: VListHandle | null;
 	};
@@ -16,7 +16,7 @@
 	type DisplayItem = {
 		id: string | number;
 		itemType: 'header' | 'item';
-		data: Datum | string;
+		data: Extension | string;
 	};
 
 	let currentItems = $state<DisplayItem[]>([]);
@@ -25,7 +25,7 @@
 		const newItems: DisplayItem[] = [];
 		const addedIds = new Set<string>();
 
-		const addItems = (exts: Datum[]) => {
+		const addItems = (exts: Extension[]) => {
 			for (const ext of exts) {
 				if (!addedIds.has(ext.id)) {
 					newItems.push({ id: ext.id, itemType: 'item', data: ext });
@@ -90,7 +90,7 @@
 {:else}
 	<BaseList
 		items={currentItems}
-		onenter={(item) => onSelect(item.data as Datum)}
+		onenter={(item) => onSelect(item.data as Extension)}
 		bind:selectedIndex={extensionsStore.selectedIndex}
 		isItemSelectable={(item) => item.itemType === 'item'}
 		onscroll={onScroll}
@@ -102,7 +102,7 @@
 					{item.data}
 				</h3>
 			{:else if item.itemType === 'item'}
-				<ExtensionListItem ext={item.data as Datum} {isSelected} {onclick} />
+				<ExtensionListItem ext={item.data as Extension} {isSelected} {onclick} />
 			{/if}
 		{/snippet}
 	</BaseList>

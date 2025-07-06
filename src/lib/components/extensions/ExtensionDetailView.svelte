@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Datum, Command as ExtensionCommand } from '$lib/store';
+	import type { Extension, Command as ExtensionCommand } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowUpRight } from '@lucide/svelte';
 	import Icon from '../Icon.svelte';
@@ -15,10 +15,9 @@
 	import KeyboardShortcut from '../KeyboardShortcut.svelte';
 	import { uiStore } from '$lib/ui.svelte';
 	import { viewManager } from '$lib/viewManager.svelte';
-	import type { PluginInfo } from '@raycast-linux/protocol';
 
 	type Props = {
-		extension: Datum;
+		extension: Extension;
 		isInstalling: boolean;
 		onInstall: () => void;
 		onOpenLightbox: (imageUrl: string) => void;
@@ -79,6 +78,19 @@
 			: []
 	);
 
+	const screenshots = $derived.by(() => {
+		if (extension.metadata && extension.metadata.length > 0) {
+			return extension.metadata;
+		}
+		if (extension.metadata_count > 0) {
+			return Array.from(
+				{ length: extension.metadata_count },
+				(_, i) => `${extension.readme_assets_path}metadata/${extension.name}-${i + 1}.png`
+			);
+		}
+		return [];
+	});
+
 	function handleOpenCommand(command: ExtensionCommand) {
 		const pluginInfo = installedCommandsInfo.find((p) => p.commandName === command.name);
 		if (pluginInfo) {
@@ -89,7 +101,7 @@
 	}
 </script>
 
-<div class="flex grow flex-col gap-6 overflow-y-auto p-6">
+<div class="flex grow flex-col gap-6 overflow-x-hidden overflow-y-auto p-6">
 	<div class="flex items-center gap-6">
 		<Icon
 			icon={extension.icons.light
@@ -141,12 +153,11 @@
 
 	<Separator />
 
-	{#if extension.metadata_count > 0}
-		<Carousel.Root class="w-full">
+	{#if screenshots.length > 0}
+		<Carousel.Root>
 			<Carousel.Content>
-				{#each Array(extension.metadata_count) as _, i (i)}
-					<Carousel.Item class="shrink grow-0 basis-auto">
-						{@const imageUrl = `${extension.readme_assets_path}metadata/${extension.name}-${i + 1}.png`}
+				{#each screenshots as imageUrl, i (imageUrl)}
+					<Carousel.Item class="grow-0 basis-auto">
 						<button class="w-full cursor-pointer" onclick={() => onOpenLightbox(imageUrl)}>
 							<img
 								src={imageUrl}
@@ -158,8 +169,8 @@
 					</Carousel.Item>
 				{/each}
 			</Carousel.Content>
-			<Carousel.Previous />
-			<Carousel.Next />
+			<Carousel.Previous class="-left-4" variant="default" />
+			<Carousel.Next class="-right-4" variant="default" />
 		</Carousel.Root>
 	{/if}
 
@@ -227,7 +238,7 @@
 						>
 							<Icon
 								icon={contributor.avatar
-									? { source: contributor.avatar, mask: 'Circle' }
+									? { source: contributor.avatar, mask: 'circle' }
 									: undefined}
 								class="size-6"
 							/>

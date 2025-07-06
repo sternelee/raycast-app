@@ -30,7 +30,14 @@ export type Platform = z.infer<typeof PlatformSchema>;
 export const StatusSchema = z.enum(['active', 'deprecated']);
 export type Status = z.infer<typeof StatusSchema>;
 
+export const IconsSchema = z.object({
+	light: z.union([z.null(), z.string()]),
+	dark: z.union([z.null(), z.string()])
+});
+export type Icons = z.infer<typeof IconsSchema>;
+
 export const AuthorSchema = z.object({
+	id: z.string().optional(),
 	name: z.string(),
 	handle: z.string(),
 	bio: z.union([z.null(), z.string()]).optional(),
@@ -41,20 +48,13 @@ export const AuthorSchema = z.object({
 	avatar_placeholder_color: AvatarPlaceholderColorSchema,
 	slack_community_username: z.union([z.null(), z.string()]).optional(),
 	slack_community_user_id: z.union([z.null(), z.string()]).optional(),
-	website_anchor: z.union([z.null(), z.string()]).optional(),
 	created_at: z.number().optional(),
+	website_anchor: z.union([z.null(), z.string()]).optional(),
 	website: z.union([z.null(), z.string()]).optional(),
 	username: z.string().optional(),
-	avatar: z.union([z.null(), z.string()]),
-	id: z.string().optional()
+	avatar: z.union([z.null(), z.string()])
 });
 export type Author = z.infer<typeof AuthorSchema>;
-
-export const IconsSchema = z.object({
-	light: z.union([z.null(), z.string()]),
-	dark: z.union([z.null(), z.string()])
-});
-export type Icons = z.infer<typeof IconsSchema>;
 
 export const ToolSchema = z.object({
 	id: z.string(),
@@ -83,21 +83,34 @@ export const CommandSchema = z.object({
 });
 export type Command = z.infer<typeof CommandSchema>;
 
-export const DatumSchema = z.object({
+export const VersionSchema = z.object({
+	title: z.string(),
+	title_link: z.null(),
+	date: z.string(),
+	markdown: z.string()
+});
+export type Version = z.infer<typeof VersionSchema>;
+
+export const ChangelogSchema = z.object({
+	versions: z.array(VersionSchema)
+});
+export type Changelog = z.infer<typeof ChangelogSchema>;
+
+export const ExtensionSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	native_id: z.null(),
 	seo_categories: z.array(z.string()),
 	platforms: z.union([z.array(PlatformSchema), z.null()]),
-	created_at: z.number(),
 	author: AuthorSchema,
+	created_at: z.number(),
+	kill_listed_at: z.number().nullable(),
 	owner: AuthorSchema,
 	status: StatusSchema,
 	is_new: z.boolean(),
 	access: AccessSchema,
 	store_url: z.string(),
 	download_count: z.number(),
-	kill_listed_at: z.number().nullable(),
 	title: z.string(),
 	description: z.string(),
 	commit_sha: z.string(),
@@ -111,14 +124,18 @@ export const DatumSchema = z.object({
 	readme_url: z.union([z.null(), z.string()]),
 	readme_assets_path: z.string(),
 	icons: IconsSchema,
-	download_url: z.string(),
 	commands: z.array(CommandSchema),
+	tools: z.array(ToolSchema),
+	download_url: z.string(),
 	contributors: z.array(AuthorSchema),
-	tools: z.array(ToolSchema)
+	past_contributors: z.array(z.any()).optional(),
+	listed: z.boolean().optional(),
+	metadata: z.array(z.string()).optional(),
+	changelog: ChangelogSchema.optional()
 });
-export type Datum = z.infer<typeof DatumSchema>;
+export type Extension = z.infer<typeof ExtensionSchema>;
 
-export const StoreListingsReturnTypeSchema = z.object({
-	data: z.array(DatumSchema)
+export const PaginatedExtensionsResponseSchema = z.object({
+	data: z.array(ExtensionSchema)
 });
-export type StoreListingsReturnType = z.infer<typeof StoreListingsReturnTypeSchema>;
+export type PaginatedExtensionsResponse = z.infer<typeof PaginatedExtensionsResponseSchema>;

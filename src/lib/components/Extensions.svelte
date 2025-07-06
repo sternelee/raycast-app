@@ -1,7 +1,6 @@
 <script lang="ts">
-	import type { Datum } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft } from '@lucide/svelte';
+	import { type Extension, ExtensionSchema } from '$lib/store';
 	import Icon from './Icon.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import ExtensionListView from './extensions/ExtensionListView.svelte';
@@ -14,6 +13,7 @@
 	import HeaderInput from './HeaderInput.svelte';
 	import { viewManager } from '$lib/viewManager.svelte';
 	import ExtensionInstallConfirm from './extensions/ExtensionInstallConfirm.svelte';
+	import { fetch } from '@tauri-apps/plugin-http';
 
 	type Props = {
 		onBack: () => void;
@@ -27,7 +27,9 @@
 
 	let { onBack, onInstall }: Props = $props();
 
-	let selectedExtension = $state<Datum | null>(null);
+	let selectedExtension = $state<Extension | null>(null);
+	let detailedExtension = $state<Extension | null>(null);
+	let isDetailLoading = $state(false);
 	let expandedImageUrl = $state<string | null>(null);
 	let isInstalling = $state(false);
 	let vlistInstance = $state<VListHandle | null>(null);
@@ -39,6 +41,32 @@
 		if (ext) {
 			selectedExtension = ext;
 			viewManager.extensionToSelect = null;
+		}
+	});
+
+	$effect(() => {
+		if (selectedExtension && selectedExtension.id !== detailedExtension?.id) {
+			detailedExtension = null;
+			isDetailLoading = true;
+			const fetchDetails = async () => {
+				try {
+					const res = await fetch(
+						`https://backend.raycast.com/api/v1/extensions/${selectedExtension!.author.handle}/${selectedExtension!.name}`
+					);
+					if (!res.ok) throw new Error(`Failed to fetch extension details: ${res.status}`);
+					const json = await res.json();
+					const parsed = ExtensionSchema.parse(json);
+					detailedExtension = parsed;
+				} catch (e) {
+					console.error('Failed to fetch or parse extension details, using list data.', e);
+					detailedExtension = selectedExtension;
+				} finally {
+					isDetailLoading = false;
+				}
+			};
+			fetchDetails();
+		} else if (!selectedExtension) {
+			detailedExtension = null;
 		}
 	});
 
@@ -69,15 +97,16 @@
 	}
 
 	async function handleInstall() {
-		if (!selectedExtension || isInstalling) return;
+		const extensionToInstall = detailedExtension || selectedExtension;
+		if (!extensionToInstall || isInstalling) return;
 		isInstalling = true;
 		try {
 			const result = await invoke<{
 				status: 'success' | 'requiresConfirmation';
 				violations?: Violation[];
 			}>('install_extension', {
-				downloadUrl: selectedExtension.download_url,
-				slug: selectedExtension.name,
+				downloadUrl: extensionToInstall.download_url,
+				slug: extensionToInstall.name,
 				force: false
 			});
 
@@ -96,12 +125,13 @@
 
 	async function handleForceInstall() {
 		showConfirmationDialog = false;
-		if (!selectedExtension) return;
+		const extensionToInstall = detailedExtension || selectedExtension;
+		if (!extensionToInstall) return;
 		isInstalling = true;
 		try {
 			await invoke('install_extension', {
-				downloadUrl: selectedExtension.download_url,
-				slug: selectedExtension.name,
+				downloadUrl: extensionToInstall.download_url,
+				slug: extensionToInstall.name,
 				force: true
 			});
 			onInstall();
@@ -133,12 +163,15 @@
 			/>
 			<CategoryFilter />
 		{/if}
-		<LoadingIndicator isLoading={extensionsStore.isLoading && !selectedExtension} />
+		<LoadingIndicator
+			isLoading={(extensionsStore.isLoading && !selectedExtension) || isDetailLoading}
+		/>
 	</header>
 
 	{#if selectedExtension}
+		{@const extensionToShow = detailedExtension || selectedExtension}
 		<ExtensionDetailView
-			extension={selectedExtension}
+			extension={extensionToShow}
 			{isInstalling}
 			onInstall={handleInstall}
 			onOpenLightbox={(imageUrl) => (expandedImageUrl = imageUrl)}

@@ -1,11 +1,11 @@
-import { StoreListingsReturnTypeSchema, type Datum } from '$lib/store';
+import { PaginatedExtensionsResponseSchema, type Extension } from '$lib/store';
 import { fetch } from '@tauri-apps/plugin-http';
 
 export class ExtensionsStore {
-	extensions = $state<Datum[]>([]);
-	searchResults = $state<Datum[]>([]);
-	featuredExtensions = $state<Datum[]>([]);
-	trendingExtensions = $state<Datum[]>([]);
+	extensions = $state<Extension[]>([]);
+	searchResults = $state<Extension[]>([]);
+	featuredExtensions = $state<Extension[]>([]);
+	trendingExtensions = $state<Extension[]>([]);
 
 	isLoading = $state(true);
 	isSearching = $state(false);
@@ -73,7 +73,7 @@ export class ExtensionsStore {
 					`https://backend.raycast.com/api/v1/store_listings/search?q=${encodeURIComponent(value)}&per_page=${this.perPage}`
 				);
 				if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-				const parsed = StoreListingsReturnTypeSchema.parse(await res.json());
+				const parsed = PaginatedExtensionsResponseSchema.parse(await res.json());
 				this.searchResults = parsed.data;
 				this.selectedIndex = 0;
 			} catch (e: unknown) {
@@ -101,18 +101,18 @@ export class ExtensionsStore {
 			]);
 
 			if (!storeRes.ok) throw new Error(`Store fetch failed: ${storeRes.status}`);
-			const storeParsed = StoreListingsReturnTypeSchema.parse(await storeRes.json());
+			const storeParsed = PaginatedExtensionsResponseSchema.parse(await storeRes.json());
 			this.extensions = storeParsed.data;
 			this.currentPage = 1;
 			this.hasMore = storeParsed.data.length === this.perPage;
 
 			if (featuredRes.ok) {
-				const featuredParsed = StoreListingsReturnTypeSchema.parse(await featuredRes.json());
+				const featuredParsed = PaginatedExtensionsResponseSchema.parse(await featuredRes.json());
 				this.featuredExtensions = featuredParsed.data;
 			}
 
 			if (trendingRes.ok) {
-				const trendingParsed = StoreListingsReturnTypeSchema.parse(await trendingRes.json());
+				const trendingParsed = PaginatedExtensionsResponseSchema.parse(await trendingRes.json());
 				this.trendingExtensions = trendingParsed.data;
 			}
 		} catch (e: unknown) {
@@ -141,7 +141,7 @@ export class ExtensionsStore {
 				`https://backend.raycast.com/api/v1/store_listings?page=${nextPage}&per_page=${this.perPage}`
 			);
 			if (!res.ok) throw new Error('Failed to fetch more extensions');
-			const parsed = StoreListingsReturnTypeSchema.parse(await res.json());
+			const parsed = PaginatedExtensionsResponseSchema.parse(await res.json());
 
 			if (parsed.data.length < this.perPage) {
 				this.hasMore = false;
