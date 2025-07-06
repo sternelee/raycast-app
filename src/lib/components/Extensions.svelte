@@ -22,6 +22,7 @@
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 	import { keyEventMatches, type KeyboardShortcut as Shortcut } from '$lib/props/actions';
 	import MainLayout from './layout/MainLayout.svelte';
+	import Header from './layout/Header.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -270,27 +271,25 @@
 
 <MainLayout>
 	{#snippet header()}
-		<header class="relative flex h-15 shrink-0 items-center pr-4 pl-[18px]">
-			<Button
-				size="icon"
-				onclick={() => (selectedExtension ? (selectedExtension = null) : onBack())}
-				variant="secondary"
-				class="size-6"
-			>
-				<Icon icon="arrow-left-16" />
-			</Button>
+		<Header
+			showBackButton={true}
+			onPopView={() => (selectedExtension ? (selectedExtension = null) : onBack())}
+			isLoading={(extensionsStore.isLoading && !selectedExtension) || isDetailLoading}
+		>
 			{#if !selectedExtension}
 				<HeaderInput
 					placeholder="Search Store for extensions..."
 					bind:value={extensionsStore.searchText}
 					autofocus
+					class="!pl-2.5"
 				/>
-				<CategoryFilter />
 			{/if}
-			<LoadingIndicator
-				isLoading={(extensionsStore.isLoading && !selectedExtension) || isDetailLoading}
-			/>
-		</header>
+			{#snippet actions()}
+				{#if !selectedExtension}
+					<CategoryFilter />
+				{/if}
+			{/snippet}
+		</Header>
 	{/snippet}
 
 	{#snippet content()}

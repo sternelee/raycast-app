@@ -2,7 +2,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { onMount, tick, untrack } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft, Trash, Loader2 } from '@lucide/svelte';
+	import { Trash, Loader2 } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
 	import { Kbd } from './ui/kbd';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
@@ -12,6 +12,7 @@
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
+	import Header from './layout/Header.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -163,12 +164,14 @@
 
 <MainLayout>
 	{#snippet header()}
-		<header class="mb-2 flex h-15 shrink-0 items-center border-b">
-			<Button variant="ghost" size="icon" onclick={onBack}>
-				<ArrowLeft class="size-5" />
-			</Button>
-			<HeaderInput placeholder="Search snippets..." bind:value={searchText} autofocus />
-		</header>
+		<Header showBackButton={true} onPopView={onBack}>
+			<HeaderInput
+				placeholder="Search snippets..."
+				bind:value={searchText}
+				autofocus
+				class="!pl-2.5"
+			/>
+		</Header>
 	{/snippet}
 	{#snippet content()}
 		<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">

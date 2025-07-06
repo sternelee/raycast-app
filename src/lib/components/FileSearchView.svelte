@@ -2,7 +2,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { tick, untrack } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft, Trash, Loader2, Folder, File, Copy, ArrowUpRight, Eye } from '@lucide/svelte';
+	import { Trash, Loader2, Folder, File, Copy, ArrowUpRight, Eye } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 	import { Kbd } from './ui/kbd';
@@ -15,6 +15,7 @@
 	import { focusManager } from '$lib/focus.svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
+	import Header from './layout/Header.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -135,17 +136,15 @@
 
 <MainLayout>
 	{#snippet header()}
-		<header class="mb-2 flex h-15 shrink-0 items-center border-b">
-			<Button variant="ghost" size="icon" onclick={onBack}>
-				<ArrowLeft class="size-5" />
-			</Button>
+		<Header showBackButton={true} onPopView={onBack}>
 			<HeaderInput
 				placeholder="Search for files and folders..."
 				bind:value={searchText}
 				bind:ref={searchInputEl}
 				autofocus
+				class="!pl-2.5"
 			/>
-		</header>
+		</Header>
 	{/snippet}
 	{#snippet content()}
 		<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">

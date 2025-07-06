@@ -15,6 +15,7 @@
 	import HeaderInput from '../HeaderInput.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import MainLayout from '../layout/MainLayout.svelte';
+	import Header from '../layout/Header.svelte';
 
 	type Props = {
 		plugins: PluginInfo[];
@@ -136,7 +137,7 @@
 
 <MainLayout>
 	{#snippet header()}
-		<header class="flex h-15 shrink-0 items-center border-b">
+		<Header>
 			<div class="relative flex w-full items-center">
 				<HeaderInput
 					placeholder={selectedQuicklinkForArgument
@@ -146,6 +147,7 @@
 					bind:ref={searchInputEl}
 					onkeydown={handleKeyDown}
 					autofocus
+					class="!pl-0"
 				/>
 
 				{#if selectedQuicklinkForArgument}
@@ -177,7 +179,7 @@
 					</div>
 				{/if}
 			</div>
-		</header>
+		</Header>
 	{/snippet}
 
 	{#snippet content()}

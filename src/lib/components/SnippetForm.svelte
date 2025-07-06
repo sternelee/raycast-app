@@ -4,8 +4,11 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import Icon from '$lib/components/Icon.svelte';
-	import { ArrowLeft, Save } from '@lucide/svelte';
+	import { Save } from '@lucide/svelte';
 	import { uiStore } from '$lib/ui.svelte';
+	import MainLayout from './layout/MainLayout.svelte';
+	import Header from './layout/Header.svelte';
+	import ActionBar from './nodes/shared/ActionBar.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -16,7 +19,7 @@
 
 	let name = $state('');
 	let keyword = $state('');
-	let content = $state('');
+	let snippetContent = $state('');
 	let error = $state('');
 
 	type ParsedPart = {
@@ -93,16 +96,16 @@
 	}
 
 	const parsedContent = $derived.by(() => {
-		if (!content) return [];
+		if (!snippetContent) return [];
 
 		const parts: ParsedPart[] = [];
 		let lastIndex = 0;
 		let cursorCount = 0;
 
-		for (const match of content.matchAll(PLACEHOLDER_REGEX)) {
+		for (const match of snippetContent.matchAll(PLACEHOLDER_REGEX)) {
 			if (match.index! > lastIndex) {
 				parts.push({
-					text: content.substring(lastIndex, match.index),
+					text: snippetContent.substring(lastIndex, match.index),
 					type: 'text'
 				});
 			}
@@ -133,22 +136,22 @@
 			lastIndex = match.index! + match[0].length;
 		}
 
-		if (lastIndex < content.length) {
-			parts.push({ text: content.substring(lastIndex), type: 'text' });
+		if (lastIndex < snippetContent.length) {
+			parts.push({ text: snippetContent.substring(lastIndex), type: 'text' });
 		}
 
 		return parts;
 	});
 
 	async function handleSave() {
-		if (!name.trim() || !keyword.trim() || !content.trim()) {
+		if (!name.trim() || !keyword.trim() || !snippetContent.trim()) {
 			error = 'All fields are required.';
 			return;
 		}
 		error = '';
 
 		try {
-			await invoke('create_snippet', { name, keyword, content });
+			await invoke('create_snippet', { name, keyword, content: snippetContent });
 			uiStore.toasts.set(Date.now(), {
 				id: Date.now(),
 				title: 'Snippet Created',
@@ -172,61 +175,67 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="mb-2 flex h-15 shrink-0 items-center border-b">
-		<Button variant="ghost" size="icon" onclick={onBack}>
-			<ArrowLeft class="size-5" />
-		</Button>
-		<div class="flex items-center gap-3 px-2">
-			<Icon icon="snippets-16" class="size-6" />
-			<h1 class="text-lg font-medium">Create Snippet</h1>
-		</div>
-	</header>
-	<div class="grow overflow-y-auto p-6">
-		<div class="mx-auto max-w-xl space-y-6">
-			<div class="grid grid-cols-[120px_1fr] items-center gap-4">
-				<label for="name" class="text-right text-sm text-gray-400">Name</label>
-				<Input id="name" placeholder="Snippet name" bind:value={name} />
+<MainLayout>
+	{#snippet header()}
+		<Header showBackButton={true} onPopView={onBack}>
+			<div class="flex items-center gap-3 !pl-2.5">
+				<Icon icon="snippets-16" class="size-6" />
+				<h1 class="text-lg font-medium">Create Snippet</h1>
 			</div>
-			<div class="grid grid-cols-[120px_1fr] items-center gap-4">
-				<label for="keyword" class="text-right text-sm text-gray-400">Keyword</label>
-				<Input id="keyword" placeholder="!email" bind:value={keyword} />
-			</div>
-
-			<div class="grid grid-cols-[120px_1fr] items-start gap-4">
-				<label for="content" class="pt-2 text-right text-sm text-gray-400">Snippet</label>
-				<div class="grid w-full">
-					<div
-						aria-hidden="true"
-						class="pointer-events-none col-start-1 row-start-1 min-h-32 w-full rounded-md border-transparent bg-transparent px-3 py-2 font-mono text-sm break-words whitespace-pre-wrap"
-					>
-						{#each parsedContent as part}
-							<span
-								class:text-blue-400={part.type === 'valid-bracket'}
-								class:text-red-400={part.type === 'invalid-bracket' || part.type === 'invalid-name'}
-								class:text-foreground={part.type === 'text' || part.type === 'valid-name'}
-							>
-								{part.text}
-							</span>
-						{/each}
-						<span>​</span>
-					</div>
-					<Textarea
-						id="content"
-						placeholder="Enter your snippet content... e.g. Hello {'{'}clipboard | uppercase}!"
-						bind:value={content}
-						class="caret-foreground col-start-1 row-start-1 min-h-32 resize-none !bg-transparent font-mono text-transparent"
-						spellcheck={false}
-					/>
+		</Header>
+	{/snippet}
+	{#snippet content()}
+		<div class="grow overflow-y-auto p-6">
+			<div class="mx-auto max-w-xl space-y-6">
+				<div class="grid grid-cols-[120px_1fr] items-center gap-4">
+					<label for="name" class="text-right text-sm text-gray-400">Name</label>
+					<Input id="name" placeholder="Snippet name" bind:value={name} />
 				</div>
-			</div>
+				<div class="grid grid-cols-[120px_1fr] items-center gap-4">
+					<label for="keyword" class="text-right text-sm text-gray-400">Keyword</label>
+					<Input id="keyword" placeholder="!email" bind:value={keyword} />
+				</div>
 
-			{#if error}
-				<p class="text-center text-red-500">{error}</p>
-			{/if}
+				<div class="grid grid-cols-[120px_1fr] items-start gap-4">
+					<label for="content" class="pt-2 text-right text-sm text-gray-400">Snippet</label>
+					<div class="grid w-full">
+						<div
+							aria-hidden="true"
+							class="pointer-events-none col-start-1 row-start-1 min-h-32 w-full rounded-md border-transparent bg-transparent px-3 py-2 font-mono text-sm break-words whitespace-pre-wrap"
+						>
+							{#each parsedContent as part}
+								<span
+									class:text-blue-400={part.type === 'valid-bracket'}
+									class:text-red-400={part.type === 'invalid-bracket' ||
+										part.type === 'invalid-name'}
+									class:text-foreground={part.type === 'text' || part.type === 'valid-name'}
+								>
+									{part.text}
+								</span>
+							{/each}
+							<span>​</span>
+						</div>
+						<Textarea
+							id="content"
+							placeholder="Enter your snippet content... e.g. Hello {'{'}clipboard | uppercase}!"
+							bind:value={snippetContent}
+							class="caret-foreground col-start-1 row-start-1 min-h-32 resize-none !bg-transparent font-mono text-transparent"
+							spellcheck={false}
+						/>
+					</div>
+				</div>
+
+				{#if error}
+					<p class="text-center text-red-500">{error}</p>
+				{/if}
+			</div>
 		</div>
-	</div>
-	<footer class="bg-card flex h-12 shrink-0 items-center justify-end border-t px-4">
-		<Button onclick={handleSave}><Save class="mr-2 size-4" /> Create Snippet</Button>
-	</footer>
-</main>
+	{/snippet}
+	{#snippet footer()}
+		<ActionBar>
+			{#snippet primaryAction({ props })}
+				<Button {...props} onclick={handleSave}><Save class="mr-2 size-4" /> Create Snippet</Button>
+			{/snippet}
+		</ActionBar>
+	{/snippet}
+</MainLayout>

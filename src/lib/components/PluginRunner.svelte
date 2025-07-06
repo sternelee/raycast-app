@@ -20,6 +20,7 @@
 	} from '$lib/props';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 	import { openUrl } from '@tauri-apps/plugin-opener';
+	import HeaderInput from './HeaderInput.svelte';
 
 	const {
 		uiTree,
@@ -144,14 +145,30 @@
 	<MainLayout>
 		{#snippet header()}
 			<Header
-				{rootNode}
-				bind:searchText
-				bind:inputRef={searchInputEl}
-				{onPopView}
-				onDispatch={handleDispatch}
-				{uiTree}
 				showBackButton={true}
-			/>
+				isLoading={(rootNode?.props.isLoading as boolean) ?? false}
+				{onPopView}
+			>
+				{#if rootNode.type === 'List' || rootNode.type === 'Grid'}
+					<HeaderInput
+						placeholder={(rootNode.props.searchBarPlaceholder as string) ?? 'Search...'}
+						bind:value={searchText}
+						bind:ref={searchInputEl}
+						autofocus
+						class="!pl-2.5"
+					/>
+				{:else if rootNode.type === 'Form'}
+					<div class="grow"></div>
+				{/if}
+				{#snippet actions()}
+					{@const searchBarAccessoryId = rootNode?.namedChildren?.searchBarAccessory}
+					{#if searchBarAccessoryId && (rootNode.type === 'List' || rootNode.type === 'Grid' || rootNode.type === 'Form')}
+						{#key searchBarAccessoryId}
+							<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} {onDispatch} />
+						{/key}
+					{/if}
+				{/snippet}
+			</Header>
 		{/snippet}
 
 		{#snippet content()}

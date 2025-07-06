@@ -6,8 +6,11 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Select from '$lib/components/ui/select';
 	import Icon from '$lib/components/Icon.svelte';
-	import { ArrowLeft, Save } from '@lucide/svelte';
+	import { Save } from '@lucide/svelte';
 	import { quicklinksStore, type Quicklink } from '$lib/quicklinks.svelte';
+	import MainLayout from './layout/MainLayout.svelte';
+	import Header from './layout/Header.svelte';
+	import ActionBar from './nodes/shared/ActionBar.svelte';
 
 	type AppInfo = {
 		name: string;
@@ -66,69 +69,70 @@
 	}
 </script>
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="mb-2 flex h-15 shrink-0 items-center border-b">
-		<Button variant="ghost" size="icon" onclick={onBack}>
-			<ArrowLeft class="size-5" />
-		</Button>
-		<div class="flex items-center gap-3 px-2">
-			<Icon icon="link-16" class="size-6" />
-			<h1 class="text-lg font-medium">{quicklink ? 'Edit Quicklink' : 'Create Quicklink'}</h1>
-		</div>
-	</header>
-	<div class="grow overflow-y-auto p-6">
-		<div class="mx-auto max-w-xl space-y-6">
-			<div class="grid grid-cols-[120px_1fr] items-center gap-4">
-				<label for="name" class="text-right text-sm text-gray-400">Name</label>
-				<Input id="name" placeholder="Quicklink name" bind:value={name} />
+<MainLayout>
+	{#snippet header()}
+		<Header showBackButton={true} onPopView={onBack}>
+			<div class="flex items-center gap-3 !pl-2.5">
+				<Icon icon="link-16" class="size-6" />
+				<h1 class="text-lg font-medium">{quicklink ? 'Edit Quicklink' : 'Create Quicklink'}</h1>
 			</div>
-
-			<div class="grid grid-cols-[120px_1fr] items-start gap-4">
-				<label for="link" class="pt-2 text-right text-sm text-gray-400">Link</label>
-				<div>
-					<Textarea
-						id="link"
-						placeholder="https://google.com/search?q={'{argument}'}"
-						bind:value={link}
-					/>
-					<p class="text-muted-foreground mt-1 text-xs">
-						Include <span class="text-foreground font-mono">{'{argument}'}</span> for context like the
-						selected or copied text in the link.
-					</p>
+		</Header>
+	{/snippet}
+	{#snippet content()}
+		<div class="grow overflow-y-auto p-6">
+			<div class="mx-auto max-w-xl space-y-6">
+				<div class="grid grid-cols-[120px_1fr] items-center gap-4">
+					<label for="name" class="text-right text-sm text-gray-400">Name</label>
+					<Input id="name" placeholder="Quicklink name" bind:value={name} />
 				</div>
-			</div>
 
-			<div class="grid grid-cols-[120px_1fr] items-center gap-4">
-				<label for="open-with" class="text-right text-sm text-gray-400">Open With</label>
-				<Select.Root bind:value={application} type="single">
-					<Select.Trigger id="open-with" class="w-full">
-						{@const selectedApp = applications.find((a) => a.exec === application)}
-						{selectedApp?.name ?? 'Default'}
-					</Select.Trigger>
-					<Select.Content>
-						<Select.Item value="Default">Default</Select.Item>
-						{#each applications as app (app.exec)}
-							<Select.Item value={app.exec}>{app.name}</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
-			</div>
+				<div class="grid grid-cols-[120px_1fr] items-start gap-4">
+					<label for="link" class="pt-2 text-right text-sm text-gray-400">Link</label>
+					<div>
+						<Textarea
+							id="link"
+							placeholder="https://google.com/search?q={'{argument}'}"
+							bind:value={link}
+						/>
+						<p class="text-muted-foreground mt-1 text-xs">
+							Include <span class="text-foreground font-mono">{'{argument}'}</span> for context like
+							the selected or copied text in the link.
+						</p>
+					</div>
+				</div>
 
-			<div class="grid grid-cols-[120px_1fr] items-center gap-4">
-				<label for="icon" class="text-right text-sm text-gray-400">Icon</label>
-				<Input id="icon" placeholder="link-16" bind:value={icon} />
-			</div>
+				<div class="grid grid-cols-[120px_1fr] items-center gap-4">
+					<label for="open-with" class="text-right text-sm text-gray-400">Open With</label>
+					<Select.Root bind:value={application} type="single">
+						<Select.Trigger id="open-with" class="w-full">
+							{@const selectedApp = applications.find((a) => a.exec === application)}
+							{selectedApp?.name ?? 'Default'}
+						</Select.Trigger>
+						<Select.Content>
+							<Select.Item value="Default">Default</Select.Item>
+							{#each applications as app (app.exec)}
+								<Select.Item value={app.exec}>{app.name}</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</div>
 
-			{#if error}
-				<p class="text-center text-red-500">{error}</p>
-			{/if}
+				<div class="grid grid-cols-[120px_1fr] items-center gap-4">
+					<label for="icon" class="text-right text-sm text-gray-400">Icon</label>
+					<Input id="icon" placeholder="link-16" bind:value={icon} />
+				</div>
+
+				{#if error}
+					<p class="text-center text-red-500">{error}</p>
+				{/if}
+			</div>
 		</div>
-	</div>
-	<footer class="bg-card flex h-12 shrink-0 items-center justify-between border-t px-4">
-		<div class="flex items-center gap-2">
-			<Icon icon="link-16" class="size-5" />
-			<span class="text-sm font-medium">Create Quicklink</span>
-		</div>
-		<Button onclick={handleSave}><Save class="mr-2 size-4" /> Save Quicklink</Button>
-	</footer>
-</main>
+	{/snippet}
+	{#snippet footer()}
+		<ActionBar>
+			{#snippet primaryAction({ props })}
+				<Button {...props} onclick={handleSave}><Save class="mr-2 size-4" /> Save Quicklink</Button>
+			{/snippet}
+		</ActionBar>
+	{/snippet}
+</MainLayout>

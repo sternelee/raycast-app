@@ -3,7 +3,7 @@
 	import { onMount, tick, untrack } from 'svelte';
 	import { VList } from 'virtua/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft, Pin, Trash, Loader2 } from '@lucide/svelte';
+	import { Pin, Trash, Loader2 } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
 	import { convertFileSrc } from '@tauri-apps/api/core';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
@@ -16,6 +16,7 @@
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
+	import Header from './layout/Header.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -228,24 +229,30 @@
 
 <MainLayout>
 	{#snippet header()}
-		<header class="flex h-15 shrink-0 items-center">
-			<Button variant="ghost" size="icon" onclick={onBack}>
-				<ArrowLeft class="size-5" />
-			</Button>
-			<HeaderInput placeholder="Type to filter entries..." bind:value={searchText} autofocus />
-			<Select.Root bind:value={filter} type="single">
-				<Select.Trigger class="w-32">
-					{filter === 'all' ? 'All Types' : filter.charAt(0).toUpperCase() + filter.slice(1) + 's'}
-				</Select.Trigger>
-				<Select.Content>
-					<Select.Item value="all">All Types</Select.Item>
-					<Select.Item value="text">Text</Select.Item>
-					<Select.Item value="image">Images</Select.Item>
-					<Select.Item value="link">Links</Select.Item>
-					<Select.Item value="color">Colors</Select.Item>
-				</Select.Content>
-			</Select.Root>
-		</header>
+		<Header showBackButton={true} onPopView={onBack}>
+			<HeaderInput
+				placeholder="Type to filter entries..."
+				bind:value={searchText}
+				autofocus
+				class="!pl-2.5"
+			/>
+			{#snippet actions()}
+				<Select.Root bind:value={filter} type="single">
+					<Select.Trigger class="w-32">
+						{filter === 'all'
+							? 'All Types'
+							: filter.charAt(0).toUpperCase() + filter.slice(1) + 's'}
+					</Select.Trigger>
+					<Select.Content>
+						<Select.Item value="all">All Types</Select.Item>
+						<Select.Item value="text">Text</Select.Item>
+						<Select.Item value="image">Images</Select.Item>
+						<Select.Item value="link">Links</Select.Item>
+						<Select.Item value="color">Colors</Select.Item>
+					</Select.Content>
+				</Select.Root>
+			{/snippet}
+		</Header>
 	{/snippet}
 	{#snippet content()}
 		<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
