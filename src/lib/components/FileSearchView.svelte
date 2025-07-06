@@ -16,6 +16,7 @@
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
+	import InfoList from './InfoList.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -185,19 +186,17 @@
 						<p class="text-muted-foreground text-sm">{selectedItem.path}</p>
 					</div>
 
-					<div class="border-t p-4">
-						<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
-						<div class="flex flex-col gap-3 text-sm">
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Type</span>
-								<span class="capitalize">{selectedItem.fileType}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Last Modified</span>
-								<span>{formatDateTime(selectedItem.lastModified)}</span>
-							</div>
-						</div>
-					</div>
+					<InfoList
+						title="Information"
+						items={[
+							{
+								label: 'Type',
+								value:
+									selectedItem.fileType.charAt(0).toUpperCase() + selectedItem.fileType.slice(1)
+							},
+							{ label: 'Last Modified', value: formatDateTime(selectedItem.lastModified) }
+						]}
+					/>
 				{/if}
 			</div>
 		</div>

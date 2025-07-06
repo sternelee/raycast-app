@@ -13,6 +13,7 @@
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
+	import InfoList from './InfoList.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -213,27 +214,15 @@
 						<div class="font-mono text-sm whitespace-pre-wrap">{selectedItem.content}</div>
 					</div>
 
-					<div class="border-t p-4">
-						<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
-						<div class="flex flex-col gap-3 text-sm">
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Name</span>
-								<span>{selectedItem.name}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Content type</span>
-								<span class="capitalize">Text</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Times used</span>
-								<span>{selectedItem.timesUsed}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Last used</span>
-								<span>{formatDateTime(selectedItem.lastUsedAt)}</span>
-							</div>
-						</div>
-					</div>
+					<InfoList
+						title="Information"
+						items={[
+							{ label: 'Name', value: selectedItem.name },
+							{ label: 'Content type', value: 'Text' },
+							{ label: 'Times used', value: selectedItem.timesUsed },
+							{ label: 'Last used', value: formatDateTime(selectedItem.lastUsedAt) }
+						]}
+					/>
 				{/if}
 			</div>
 		</div>

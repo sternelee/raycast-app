@@ -17,6 +17,7 @@
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
+	import InfoList from './InfoList.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -328,31 +329,21 @@
 						{/if}
 					</div>
 
-					<div class="border-t p-4">
-						<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
-						<div class="flex flex-col gap-3 text-sm">
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Application</span>
-								<span>{selectedItem.sourceAppName ?? 'Unknown'}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Content type</span>
-								<span class="capitalize">{selectedItem.contentType}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Times copied</span>
-								<span>{selectedItem.timesCopied}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Last copied</span>
-								<span>{formatDateTime(selectedItem.lastCopiedAt)}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">First copied</span>
-								<span>{formatDateTime(selectedItem.firstCopiedAt)}</span>
-							</div>
-						</div>
-					</div>
+					<InfoList
+						title="Information"
+						items={[
+							{ label: 'Application', value: selectedItem.sourceAppName ?? 'Unknown' },
+							{
+								label: 'Content type',
+								value:
+									selectedItem.contentType.charAt(0).toUpperCase() +
+									selectedItem.contentType.slice(1)
+							},
+							{ label: 'Times copied', value: selectedItem.timesCopied },
+							{ label: 'Last copied', value: formatDateTime(selectedItem.lastCopiedAt) },
+							{ label: 'First copied', value: formatDateTime(selectedItem.firstCopiedAt) }
+						]}
+					/>
 				{/if}
 			</div>
 		</div>
