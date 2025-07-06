@@ -212,16 +212,22 @@
 		<Separator orientation="vertical" class="-mt-6" />
 
 		<div class="space-y-8">
-			<div>
-				<h2 class="text-muted-foreground mb-1 text-xs font-medium uppercase">README</h2>
-				<Button
-					variant="ghost"
-					class="-mx-3 w-full justify-between"
-					onclick={() => extension?.readme_url && openUrl(extension.readme_url)}
-				>
-					Open README <ArrowUpRight class="text-muted-foreground size-4" />
-				</Button>
-			</div>
+			{#if extension.readme_url}
+				<div>
+					<h2 class="text-muted-foreground mb-1 text-xs font-medium uppercase">README</h2>
+					<Button
+						variant="link"
+						class="text-foreground group w-full justify-between !p-0"
+						onclick={() => openUrl(extension.readme_url!)}
+					>
+						Open README
+						<Icon
+							icon="arrow-ne-16"
+							class="text-muted-foreground group-hover:text-foreground size-4"
+						/>
+					</Button>
+				</div>
+			{/if}
 			<div>
 				<h3 class="text-muted-foreground mb-1 text-xs font-medium uppercase">Last updated</h3>
 				<p>{formatTimeAgo(extension.updated_at)}</p>
@@ -231,7 +237,7 @@
 				<div class="flex flex-wrap gap-2">
 					{#each extension.contributors as contributor (contributor.handle)}
 						<a
-							href={`https://github.com/${contributor.github_handle}`}
+							href="https://github.com/{contributor.github_handle}"
 							target="_blank"
 							class="flex items-center gap-2"
 							rel="noopener noreferrer"
@@ -260,16 +266,22 @@
 					</div>
 				</div>
 			{/if}
-			<div>
-				<h3 class="text-muted-foreground mb-1 text-xs font-medium uppercase">Source Code</h3>
-				<Button
-					variant="ghost"
-					class="-mx-3 w-full justify-between"
-					onclick={() => extension?.source_url && openUrl(extension.source_url)}
-				>
-					View Code <ArrowUpRight class="text-muted-foreground size-4" />
-				</Button>
-			</div>
+			{#if extension.source_url}
+				<div>
+					<h3 class="text-muted-foreground mb-1 text-xs font-medium uppercase">Source Code</h3>
+					<Button
+						variant="link"
+						class="text-foreground group w-full justify-between !p-0"
+						onclick={() => openUrl(extension.source_url)}
+					>
+						View Code
+						<Icon
+							icon="arrow-ne-16"
+							class="text-muted-foreground group-hover:text-foreground size-4"
+						/>
+					</Button>
+				</div>
+			{/if}
 		</div>
 	</div>
 </div>
