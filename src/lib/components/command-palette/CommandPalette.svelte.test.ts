@@ -415,4 +415,57 @@ describe('CommandPalette.svelte', () => {
 			expect(viewManager.showSettings).toHaveBeenCalledWith('mock-plugin-1');
 		});
 	});
+
+	describe('6. Keyboard Navigation', () => {
+		it('should move selection down with ArrowDown key', async () => {
+			render(CommandPalette, { plugins: mockPlugins, onRunPlugin });
+			const listItems = await screen.findAllByTestId('list-item');
+			expect(listItems[0]).toHaveClass('!bg-accent');
+
+			await user.keyboard('{ArrowDown}');
+
+			expect(listItems[0]).not.toHaveClass('!bg-accent');
+			expect(listItems[1]).toHaveClass('!bg-accent');
+		});
+
+		it('should move selection up with ArrowUp key', async () => {
+			render(CommandPalette, { plugins: mockPlugins, onRunPlugin });
+			const listItems = await screen.findAllByTestId('list-item');
+			await user.keyboard('{ArrowDown}');
+
+			expect(listItems[1]).toHaveClass('!bg-accent');
+
+			await user.keyboard('{ArrowUp}');
+
+			expect(listItems[1]).not.toHaveClass('!bg-accent');
+			expect(listItems[0]).toHaveClass('!bg-accent');
+		});
+
+		it('should wrap selection from top to bottom on ArrowUp', async () => {
+			render(CommandPalette, { plugins: mockPlugins, onRunPlugin });
+			const listItems = await screen.findAllByTestId('list-item');
+			expect(listItems[0]).toHaveClass('!bg-accent');
+
+			await user.keyboard('{ArrowUp}');
+
+			expect(listItems[0]).not.toHaveClass('!bg-accent');
+			expect(listItems[listItems.length - 1]).toHaveClass('!bg-accent');
+		});
+
+		it('should wrap selection from bottom to top on ArrowDown', async () => {
+			render(CommandPalette, { plugins: mockPlugins, onRunPlugin });
+			const listItems = await screen.findAllByTestId('list-item');
+
+			for (let i = 0; i < listItems.length - 1; i++) {
+				await user.keyboard('{ArrowDown}');
+			}
+
+			expect(listItems[listItems.length - 1]).toHaveClass('!bg-accent');
+
+			await user.keyboard('{ArrowDown}');
+
+			expect(listItems[listItems.length - 1]).not.toHaveClass('!bg-accent');
+			expect(listItems[0]).toHaveClass('!bg-accent');
+		});
+	});
 });
