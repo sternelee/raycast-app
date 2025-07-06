@@ -28,7 +28,6 @@
 			return [
 				{
 					title: 'Copy Answer',
-					shortcut: { modifiers: ['ctrl', 'shift'], key: 'c' },
 					handler: barActions.handleEnter
 				},
 				{
