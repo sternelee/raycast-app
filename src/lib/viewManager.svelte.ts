@@ -5,7 +5,7 @@ import type { Quicklink } from './quicklinks.svelte';
 import { invoke } from '@tauri-apps/api/core';
 import { extensionsStore } from './components/extensions/store.svelte';
 import { fetch } from '@tauri-apps/plugin-http';
-import { DatumSchema, StoreListingsReturnTypeSchema, type Datum } from '$lib/store';
+import { ExtensionSchema, type Extension } from '$lib/store';
 
 export type ViewState =
 	| 'command-palette'
@@ -32,7 +32,7 @@ class ViewManager {
 	snippetsForImport = $state<any[] | null>(null);
 	commandToConfirm = $state<PluginInfo | null>(null);
 	pluginToSelectInSettings = $state<string | undefined>(undefined);
-	extensionToSelect = $state<Datum | null>(null);
+	extensionToSelect = $state<Extension | null>(null);
 
 	oauthState: OauthState = $state(null);
 	oauthStatus: 'initial' | 'authorizing' | 'success' | 'error' = $state('initial');
@@ -50,7 +50,7 @@ class ViewManager {
 		this.pluginToSelectInSettings = pluginName;
 	};
 
-	showExtensions = (extension?: Datum) => {
+	showExtensions = (extension?: Extension) => {
 		this.currentView = 'extensions-store';
 		this.extensionToSelect = extension ?? null;
 	};
@@ -146,7 +146,7 @@ class ViewManager {
 								`https://backend.raycast.com/api/v1/extensions/${author}/${extensionSlug}`
 							);
 							if (!res.ok) throw new Error(`Search failed: ${res.status}`);
-							const parsed = DatumSchema.parse(await res.json());
+							const parsed = ExtensionSchema.parse(await res.json());
 
 							this.extensionToSelect = parsed;
 						} catch (e) {
