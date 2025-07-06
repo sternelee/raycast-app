@@ -206,8 +206,8 @@
 {#if commandToConfirm}
 	<CommandDeeplinkConfirm
 		plugin={commandToConfirm}
-		on:confirm={viewManager.confirmRunCommand}
-		on:cancel={viewManager.cancelRunCommand}
+		onconfirm={viewManager.confirmRunCommand}
+		oncancel={viewManager.cancelRunCommand}
 	/>
 {/if}
 
