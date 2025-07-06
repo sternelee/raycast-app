@@ -15,6 +15,7 @@
 	import BaseList from './BaseList.svelte';
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import HeaderInput from './HeaderInput.svelte';
+	import MainLayout from './layout/MainLayout.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -225,150 +226,158 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="flex h-15 shrink-0 items-center">
-		<Button variant="ghost" size="icon" onclick={onBack}>
-			<ArrowLeft class="size-5" />
-		</Button>
-		<HeaderInput placeholder="Type to filter entries..." bind:value={searchText} autofocus />
-		<Select.Root bind:value={filter} type="single">
-			<Select.Trigger class="w-32">
-				{filter === 'all' ? 'All Types' : filter.charAt(0).toUpperCase() + filter.slice(1) + 's'}
-			</Select.Trigger>
-			<Select.Content>
-				<Select.Item value="all">All Types</Select.Item>
-				<Select.Item value="text">Text</Select.Item>
-				<Select.Item value="image">Images</Select.Item>
-				<Select.Item value="link">Links</Select.Item>
-				<Select.Item value="color">Colors</Select.Item>
-			</Select.Content>
-		</Select.Root>
-	</header>
-	<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
-		<div class="flex-grow overflow-y-auto border-r" bind:this={listContainerEl}>
-			<BaseList
-				items={displayedItems}
-				bind:selectedIndex
-				onenter={(item) => handleCopy(item.data as ClipboardItem)}
-				isItemSelectable={(item) => item.itemType === 'item'}
-			>
-				{#snippet itemSnippet({ item, isSelected, onclick: itemOnClick })}
-					{#if item.itemType === 'header'}
-						<h3 class="text-muted-foreground px-4 pt-2.5 pb-1 text-xs font-semibold uppercase">
-							{item.data as string}
-						</h3>
-					{:else if item.itemType === 'item'}
-						{@const clipboardItem = item.data as ClipboardItem}
-						<button class="w-full" onclick={itemOnClick}>
-							<ListItemBase
-								icon={iconMap.get(clipboardItem.contentType) ?? 'question-mark-circle-16'}
-								title={clipboardItem.preview ?? clipboardItem.contentValue ?? ''}
-								{isSelected}
-							/>
-						</button>
-					{/if}
-				{/snippet}
-			</BaseList>
-			{#if isFetching && allItems.length > 0}
-				<div class="text-muted-foreground flex h-10 items-center justify-center">
-					<Loader2 class="size-4 animate-spin" />
-				</div>
-			{/if}
-		</div>
-		<div class="flex flex-col overflow-y-hidden">
-			{#if selectedItem}
-				<div class="relative flex-grow overflow-y-auto p-4">
-					{#if isContentLoading}
-						<div
-							class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm"
-						>
-							<Loader2 class="text-muted-foreground size-6 animate-spin" />
-						</div>
-					{/if}
-
-					{#if selectedItemContent}
-						{#if selectedItem.contentType === 'color'}
-							<div class="flex flex-col items-center justify-center gap-4 py-8">
-								<div
-									class="size-24 rounded-full border"
-									style:background-color={selectedItemContent}
-								></div>
-								<p class="font-mono text-lg">{selectedItemContent}</p>
-							</div>
-						{:else if selectedItem.contentType === 'image'}
-							<img
-								src={convertFileSrc(selectedItemContent)}
-								alt="Clipboard content"
-								class="mx-auto max-h-full max-w-full rounded-lg object-contain"
-							/>
-						{:else if virtualizedLines.length > 0}
-							<div class="h-full font-mono text-sm">
-								<VList data={virtualizedLines}>
-									{#snippet children(item)}
-										<div class="whitespace-pre">{item}</div>
-									{/snippet}
-								</VList>
-							</div>
-						{:else if selectedItem.contentType === 'text'}
-							<div class="rounded bg-black/10 p-4 font-mono text-sm whitespace-pre-wrap">
-								{selectedItemContent}
+<MainLayout>
+	{#snippet header()}
+		<header class="flex h-15 shrink-0 items-center">
+			<Button variant="ghost" size="icon" onclick={onBack}>
+				<ArrowLeft class="size-5" />
+			</Button>
+			<HeaderInput placeholder="Type to filter entries..." bind:value={searchText} autofocus />
+			<Select.Root bind:value={filter} type="single">
+				<Select.Trigger class="w-32">
+					{filter === 'all' ? 'All Types' : filter.charAt(0).toUpperCase() + filter.slice(1) + 's'}
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Item value="all">All Types</Select.Item>
+					<Select.Item value="text">Text</Select.Item>
+					<Select.Item value="image">Images</Select.Item>
+					<Select.Item value="link">Links</Select.Item>
+					<Select.Item value="color">Colors</Select.Item>
+				</Select.Content>
+			</Select.Root>
+		</header>
+	{/snippet}
+	{#snippet content()}
+		<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
+			<div class="flex-grow overflow-y-auto border-r" bind:this={listContainerEl}>
+				<BaseList
+					items={displayedItems}
+					bind:selectedIndex
+					onenter={(item) => handleCopy(item.data as ClipboardItem)}
+					isItemSelectable={(item) => item.itemType === 'item'}
+				>
+					{#snippet itemSnippet({ item, isSelected, onclick: itemOnClick })}
+						{#if item.itemType === 'header'}
+							<h3 class="text-muted-foreground px-4 pt-2.5 pb-1 text-xs font-semibold uppercase">
+								{item.data as string}
+							</h3>
+						{:else if item.itemType === 'item'}
+							{@const clipboardItem = item.data as ClipboardItem}
+							<button class="w-full" onclick={itemOnClick}>
+								<ListItemBase
+									icon={iconMap.get(clipboardItem.contentType) ?? 'question-mark-circle-16'}
+									title={clipboardItem.preview ?? clipboardItem.contentValue ?? ''}
+									{isSelected}
+								/>
+							</button>
+						{/if}
+					{/snippet}
+				</BaseList>
+				{#if isFetching && allItems.length > 0}
+					<div class="text-muted-foreground flex h-10 items-center justify-center">
+						<Loader2 class="size-4 animate-spin" />
+					</div>
+				{/if}
+			</div>
+			<div class="flex flex-col overflow-y-hidden">
+				{#if selectedItem}
+					<div class="relative flex-grow overflow-y-auto p-4">
+						{#if isContentLoading}
+							<div
+								class="bg-background/50 absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm"
+							>
+								<Loader2 class="text-muted-foreground size-6 animate-spin" />
 							</div>
 						{/if}
-					{/if}
-				</div>
 
-				<div class="border-t p-4">
-					<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
-					<div class="flex flex-col gap-3 text-sm">
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Application</span>
-							<span>{selectedItem.sourceAppName ?? 'Unknown'}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Content type</span>
-							<span class="capitalize">{selectedItem.contentType}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Times copied</span>
-							<span>{selectedItem.timesCopied}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Last copied</span>
-							<span>{formatDateTime(selectedItem.lastCopiedAt)}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">First copied</span>
-							<span>{formatDateTime(selectedItem.firstCopiedAt)}</span>
+						{#if selectedItemContent}
+							{#if selectedItem.contentType === 'color'}
+								<div class="flex flex-col items-center justify-center gap-4 py-8">
+									<div
+										class="size-24 rounded-full border"
+										style:background-color={selectedItemContent}
+									></div>
+									<p class="font-mono text-lg">{selectedItemContent}</p>
+								</div>
+							{:else if selectedItem.contentType === 'image'}
+								<img
+									src={convertFileSrc(selectedItemContent)}
+									alt="Clipboard content"
+									class="mx-auto max-h-full max-w-full rounded-lg object-contain"
+								/>
+							{:else if virtualizedLines.length > 0}
+								<div class="h-full font-mono text-sm">
+									<VList data={virtualizedLines}>
+										{#snippet children(item)}
+											<div class="whitespace-pre">{item}</div>
+										{/snippet}
+									</VList>
+								</div>
+							{:else if selectedItem.contentType === 'text'}
+								<div class="rounded bg-black/10 p-4 font-mono text-sm whitespace-pre-wrap">
+									{selectedItemContent}
+								</div>
+							{/if}
+						{/if}
+					</div>
+
+					<div class="border-t p-4">
+						<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
+						<div class="flex flex-col gap-3 text-sm">
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Application</span>
+								<span>{selectedItem.sourceAppName ?? 'Unknown'}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Content type</span>
+								<span class="capitalize">{selectedItem.contentType}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Times copied</span>
+								<span>{selectedItem.timesCopied}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Last copied</span>
+								<span>{formatDateTime(selectedItem.lastCopiedAt)}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">First copied</span>
+								<span>{formatDateTime(selectedItem.firstCopiedAt)}</span>
+							</div>
 						</div>
 					</div>
-				</div>
-
-				<ActionBar>
-					{#snippet primaryAction({ props })}
-						<Button {...props} onclick={() => handleCopy(selectedItem)}>
-							Copy to Clipboard <Kbd>⏎</Kbd>
-						</Button>
-					{/snippet}
-					{#snippet actions()}
-						<ActionMenu>
-							<DropdownMenu.Item onclick={() => handlePin(selectedItem)}>
-								<Pin class="mr-2 size-4" />
-								<span>{selectedItem.isPinned ? 'Unpin' : 'Pin'}</span>
-								<DropdownMenu.Shortcut>
-									<KeyboardShortcut shortcut={{ key: 'P', modifiers: ['cmd', 'shift'] }} />
-								</DropdownMenu.Shortcut>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item onclick={() => handleDelete(selectedItem)}>
-								<Trash class="mr-2 size-4" />
-								<span>Delete</span>
-								<DropdownMenu.Shortcut>
-									<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
-								</DropdownMenu.Shortcut>
-							</DropdownMenu.Item>
-						</ActionMenu>
-					{/snippet}
-				</ActionBar>
-			{/if}
+				{/if}
+			</div>
 		</div>
-	</div>
-</main>
+	{/snippet}
+
+	{#snippet footer()}
+		{#if selectedItem}
+			<ActionBar>
+				{#snippet primaryAction({ props })}
+					<Button {...props} onclick={() => handleCopy(selectedItem)}>
+						Copy to Clipboard <Kbd>⏎</Kbd>
+					</Button>
+				{/snippet}
+				{#snippet actions()}
+					<ActionMenu>
+						<DropdownMenu.Item onclick={() => handlePin(selectedItem)}>
+							<Pin class="mr-2 size-4" />
+							<span>{selectedItem.isPinned ? 'Unpin' : 'Pin'}</span>
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'P', modifiers: ['cmd', 'shift'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onclick={() => handleDelete(selectedItem)}>
+							<Trash class="mr-2 size-4" />
+							<span>Delete</span>
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+					</ActionMenu>
+				{/snippet}
+			</ActionBar>
+		{/if}
+	{/snippet}
+</MainLayout>

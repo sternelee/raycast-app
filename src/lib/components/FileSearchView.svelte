@@ -14,6 +14,7 @@
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import { focusManager } from '$lib/focus.svelte';
 	import HeaderInput from './HeaderInput.svelte';
+	import MainLayout from './layout/MainLayout.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -132,104 +133,112 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="mb-2 flex h-15 shrink-0 items-center border-b">
-		<Button variant="ghost" size="icon" onclick={onBack}>
-			<ArrowLeft class="size-5" />
-		</Button>
-		<HeaderInput
-			placeholder="Search for files and folders..."
-			bind:value={searchText}
-			bind:ref={searchInputEl}
-			autofocus
-		/>
-	</header>
-	<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
-		<div class="flex-grow overflow-y-auto border-r">
-			{#if isFetching && searchResults.length === 0}
-				<div class="text-muted-foreground flex h-full items-center justify-center">
-					<Loader2 class="size-6 animate-spin" />
-				</div>
-			{/if}
-			<BaseList
-				items={searchResults.map((item) => ({ ...item, id: item.path }))}
-				bind:selectedIndex
-				onenter={(item) => handleOpen(item)}
-			>
-				{#snippet itemSnippet({ item, isSelected, onclick })}
-					<button class="w-full text-left" {onclick}>
-						<ListItemBase
-							icon={item.fileType === 'directory' ? 'folder-16' : 'blank-document-16'}
-							title={item.name}
-							subtitle={item.parentPath}
-							{isSelected}
-						/>
-					</button>
+<MainLayout>
+	{#snippet header()}
+		<header class="mb-2 flex h-15 shrink-0 items-center border-b">
+			<Button variant="ghost" size="icon" onclick={onBack}>
+				<ArrowLeft class="size-5" />
+			</Button>
+			<HeaderInput
+				placeholder="Search for files and folders..."
+				bind:value={searchText}
+				bind:ref={searchInputEl}
+				autofocus
+			/>
+		</header>
+	{/snippet}
+	{#snippet content()}
+		<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
+			<div class="flex-grow overflow-y-auto border-r">
+				{#if isFetching && searchResults.length === 0}
+					<div class="text-muted-foreground flex h-full items-center justify-center">
+						<Loader2 class="size-6 animate-spin" />
+					</div>
+				{/if}
+				<BaseList
+					items={searchResults.map((item) => ({ ...item, id: item.path }))}
+					bind:selectedIndex
+					onenter={(item) => handleOpen(item)}
+				>
+					{#snippet itemSnippet({ item, isSelected, onclick })}
+						<button class="w-full text-left" {onclick}>
+							<ListItemBase
+								icon={item.fileType === 'directory' ? 'folder-16' : 'blank-document-16'}
+								title={item.name}
+								subtitle={item.parentPath}
+								{isSelected}
+							/>
+						</button>
+					{/snippet}
+				</BaseList>
+			</div>
+			<div class="flex flex-col overflow-y-hidden">
+				{#if selectedItem}
+					<div class="flex h-full flex-col items-center justify-center p-4">
+						<div class="mb-4">
+							{#if selectedItem.fileType === 'directory'}
+								<Folder class="size-24 text-gray-500" />
+							{:else}
+								<File class="size-24 text-gray-500" />
+							{/if}
+						</div>
+						<p class="text-xl font-semibold">{selectedItem.name}</p>
+						<p class="text-muted-foreground text-sm">{selectedItem.path}</p>
+					</div>
+
+					<div class="border-t p-4">
+						<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
+						<div class="flex flex-col gap-3 text-sm">
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Type</span>
+								<span class="capitalize">{selectedItem.fileType}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Last Modified</span>
+								<span>{formatDateTime(selectedItem.lastModified)}</span>
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/snippet}
+
+	{#snippet footer()}
+		{#if selectedItem}
+			<ActionBar>
+				{#snippet primaryAction({ props })}
+					<Button {...props} onclick={() => handleOpen(selectedItem)}>
+						Open <KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
+					</Button>
 				{/snippet}
-			</BaseList>
-		</div>
-		<div class="flex flex-col overflow-y-hidden">
-			{#if selectedItem}
-				<div class="flex h-full flex-col items-center justify-center p-4">
-					<div class="mb-4">
-						{#if selectedItem.fileType === 'directory'}
-							<Folder class="size-24 text-gray-500" />
-						{:else}
-							<File class="size-24 text-gray-500" />
-						{/if}
-					</div>
-					<p class="text-xl font-semibold">{selectedItem.name}</p>
-					<p class="text-muted-foreground text-sm">{selectedItem.path}</p>
-				</div>
-
-				<div class="border-t p-4">
-					<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
-					<div class="flex flex-col gap-3 text-sm">
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Type</span>
-							<span class="capitalize">{selectedItem.fileType}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Last Modified</span>
-							<span>{formatDateTime(selectedItem.lastModified)}</span>
-						</div>
-					</div>
-				</div>
-
-				<ActionBar>
-					{#snippet primaryAction({ props })}
-						<Button {...props} onclick={() => handleOpen(selectedItem)}>
-							Open <KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
-						</Button>
-					{/snippet}
-					{#snippet actions()}
-						<ActionMenu>
-							<DropdownMenu.Item onclick={() => handleShow(selectedItem)}>
-								<Eye class="mr-2 size-4" />
-								<span>Show in File Manager</span>
-								<DropdownMenu.Shortcut>
-									<KeyboardShortcut shortcut={{ key: 'Enter', modifiers: ['cmd'] }} />
-								</DropdownMenu.Shortcut>
-							</DropdownMenu.Item>
-							<DropdownMenu.Item onclick={() => handleCopyPath(selectedItem)}>
-								<Copy class="mr-2 size-4" />
-								<span>Copy Path</span>
-								<DropdownMenu.Shortcut>
-									<KeyboardShortcut shortcut={{ key: 'c', modifiers: ['ctrl'] }} />
-								</DropdownMenu.Shortcut>
-							</DropdownMenu.Item>
-							<DropdownMenu.Separator />
-							<DropdownMenu.Item class="text-red-500" onclick={() => handleDelete(selectedItem)}>
-								<Trash class="mr-2 size-4" />
-								<span>Move to Trash</span>
-								<DropdownMenu.Shortcut>
-									<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
-								</DropdownMenu.Shortcut>
-							</DropdownMenu.Item>
-						</ActionMenu>
-					{/snippet}
-				</ActionBar>
-			{/if}
-		</div>
-	</div>
-</main>
+				{#snippet actions()}
+					<ActionMenu>
+						<DropdownMenu.Item onclick={() => handleShow(selectedItem)}>
+							<Eye class="mr-2 size-4" />
+							<span>Show in File Manager</span>
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'Enter', modifiers: ['cmd'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+						<DropdownMenu.Item onclick={() => handleCopyPath(selectedItem)}>
+							<Copy class="mr-2 size-4" />
+							<span>Copy Path</span>
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'c', modifiers: ['ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+						<DropdownMenu.Item class="text-red-500" onclick={() => handleDelete(selectedItem)}>
+							<Trash class="mr-2 size-4" />
+							<span>Move to Trash</span>
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+					</ActionMenu>
+				{/snippet}
+			</ActionBar>
+		{/if}
+	{/snippet}
+</MainLayout>

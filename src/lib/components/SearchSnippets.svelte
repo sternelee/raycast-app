@@ -11,6 +11,7 @@
 	import BaseList from './BaseList.svelte';
 	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import HeaderInput from './HeaderInput.svelte';
+	import MainLayout from './layout/MainLayout.svelte';
 
 	type Props = {
 		onBack: () => void;
@@ -160,93 +161,101 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="mb-2 flex h-15 shrink-0 items-center border-b">
-		<Button variant="ghost" size="icon" onclick={onBack}>
-			<ArrowLeft class="size-5" />
-		</Button>
-		<HeaderInput placeholder="Search snippets..." bind:value={searchText} autofocus />
-	</header>
-	<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
-		<div class="flex-grow overflow-y-auto border-r">
-			{#if isFetching && snippets.length === 0}
-				<div class="text-muted-foreground flex h-full items-center justify-center">
-					<Loader2 class="size-6 animate-spin" />
-				</div>
-			{:else}
-				<BaseList
-					items={displayedItems}
-					bind:selectedIndex
-					onenter={(item) => handlePaste(item.data as Snippet)}
-					isItemSelectable={(item) => item.itemType === 'item'}
-				>
-					{#snippet itemSnippet({ item, isSelected, onclick: itemOnClick })}
-						{#if item.itemType === 'header'}
-							<h3 class="text-muted-foreground px-4 pt-2.5 pb-1 text-xs font-semibold uppercase">
-								{item.data as string}
-							</h3>
-						{:else if item.itemType === 'item'}
-							{@const snippetItem = item.data as Snippet}
-							<button class="w-full text-left" onclick={itemOnClick}>
-								<ListItemBase
-									icon="snippets-16"
-									title={snippetItem.name}
-									subtitle={snippetItem.keyword}
-									{isSelected}
-								/>
-							</button>
-						{/if}
-					{/snippet}
-				</BaseList>
-			{/if}
-		</div>
-		<div class="flex flex-col overflow-y-hidden">
-			{#if selectedItem}
-				<div class="relative flex-grow overflow-y-auto p-4">
-					<div class="font-mono text-sm whitespace-pre-wrap">{selectedItem.content}</div>
-				</div>
+<MainLayout>
+	{#snippet header()}
+		<header class="mb-2 flex h-15 shrink-0 items-center border-b">
+			<Button variant="ghost" size="icon" onclick={onBack}>
+				<ArrowLeft class="size-5" />
+			</Button>
+			<HeaderInput placeholder="Search snippets..." bind:value={searchText} autofocus />
+		</header>
+	{/snippet}
+	{#snippet content()}
+		<div class="grid grow grid-cols-[minmax(0,_1.5fr)_minmax(0,_2.5fr)] overflow-y-hidden">
+			<div class="flex-grow overflow-y-auto border-r">
+				{#if isFetching && snippets.length === 0}
+					<div class="text-muted-foreground flex h-full items-center justify-center">
+						<Loader2 class="size-6 animate-spin" />
+					</div>
+				{:else}
+					<BaseList
+						items={displayedItems}
+						bind:selectedIndex
+						onenter={(item) => handlePaste(item.data as Snippet)}
+						isItemSelectable={(item) => item.itemType === 'item'}
+					>
+						{#snippet itemSnippet({ item, isSelected, onclick: itemOnClick })}
+							{#if item.itemType === 'header'}
+								<h3 class="text-muted-foreground px-4 pt-2.5 pb-1 text-xs font-semibold uppercase">
+									{item.data as string}
+								</h3>
+							{:else if item.itemType === 'item'}
+								{@const snippetItem = item.data as Snippet}
+								<button class="w-full text-left" onclick={itemOnClick}>
+									<ListItemBase
+										icon="snippets-16"
+										title={snippetItem.name}
+										subtitle={snippetItem.keyword}
+										{isSelected}
+									/>
+								</button>
+							{/if}
+						{/snippet}
+					</BaseList>
+				{/if}
+			</div>
+			<div class="flex flex-col overflow-y-hidden">
+				{#if selectedItem}
+					<div class="relative flex-grow overflow-y-auto p-4">
+						<div class="font-mono text-sm whitespace-pre-wrap">{selectedItem.content}</div>
+					</div>
 
-				<div class="border-t p-4">
-					<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
-					<div class="flex flex-col gap-3 text-sm">
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Name</span>
-							<span>{selectedItem.name}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Content type</span>
-							<span class="capitalize">Text</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Times used</span>
-							<span>{selectedItem.timesUsed}</span>
-						</div>
-						<div class="flex justify-between">
-							<span class="text-muted-foreground">Last used</span>
-							<span>{formatDateTime(selectedItem.lastUsedAt)}</span>
+					<div class="border-t p-4">
+						<h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Information</h3>
+						<div class="flex flex-col gap-3 text-sm">
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Name</span>
+								<span>{selectedItem.name}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Content type</span>
+								<span class="capitalize">Text</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Times used</span>
+								<span>{selectedItem.timesUsed}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-muted-foreground">Last used</span>
+								<span>{formatDateTime(selectedItem.lastUsedAt)}</span>
+							</div>
 						</div>
 					</div>
-				</div>
-
-				<ActionBar>
-					{#snippet primaryAction({ props })}
-						<Button {...props} onclick={() => handlePaste(selectedItem)}>
-							Paste <Kbd>⏎</Kbd>
-						</Button>
-					{/snippet}
-					{#snippet actions()}
-						<ActionMenu>
-							<DropdownMenu.Item onclick={() => handleDelete(selectedItem)}>
-								<Trash class="mr-2 size-4" />
-								<span>Delete</span>
-								<DropdownMenu.Shortcut>
-									<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
-								</DropdownMenu.Shortcut>
-							</DropdownMenu.Item>
-						</ActionMenu>
-					{/snippet}
-				</ActionBar>
-			{/if}
+				{/if}
+			</div>
 		</div>
-	</div>
-</main>
+	{/snippet}
+
+	{#snippet footer()}
+		{#if selectedItem}
+			<ActionBar>
+				{#snippet primaryAction({ props })}
+					<Button {...props} onclick={() => handlePaste(selectedItem)}>
+						Paste <Kbd>⏎</Kbd>
+					</Button>
+				{/snippet}
+				{#snippet actions()}
+					<ActionMenu>
+						<DropdownMenu.Item onclick={() => handleDelete(selectedItem)}>
+							<Trash class="mr-2 size-4" />
+							<span>Delete</span>
+							<DropdownMenu.Shortcut>
+								<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
+							</DropdownMenu.Shortcut>
+						</DropdownMenu.Item>
+					</ActionMenu>
+				{/snippet}
+			</ActionBar>
+		{/if}
+	{/snippet}
+</MainLayout>

@@ -14,6 +14,7 @@
 	import { focusManager } from '$lib/focus.svelte';
 	import HeaderInput from '../HeaderInput.svelte';
 	import { Input } from '$lib/components/ui/input';
+	import MainLayout from '../layout/MainLayout.svelte';
 
 	type Props = {
 		plugins: PluginInfo[];
@@ -133,110 +134,120 @@
 	}
 </script>
 
-<main class="bg-background text-foreground flex h-screen flex-col">
-	<header class="flex h-15 shrink-0 items-center border-b">
-		<div class="relative flex w-full items-center">
-			<HeaderInput
-				placeholder={selectedQuicklinkForArgument
-					? selectedQuicklinkForArgument.name
-					: 'Search for apps and commands...'}
-				bind:value={searchText}
-				bind:ref={searchInputEl}
-				onkeydown={handleKeyDown}
-				autofocus
-			/>
+<MainLayout>
+	{#snippet header()}
+		<header class="flex h-15 shrink-0 items-center border-b">
+			<div class="relative flex w-full items-center">
+				<HeaderInput
+					placeholder={selectedQuicklinkForArgument
+						? selectedQuicklinkForArgument.name
+						: 'Search for apps and commands...'}
+					bind:value={searchText}
+					bind:ref={searchInputEl}
+					onkeydown={handleKeyDown}
+					autofocus
+				/>
 
-			{#if selectedQuicklinkForArgument}
-				<div class="pointer-events-none absolute top-0 left-0 flex h-full w-full items-center pl-4">
-					<span class="text-lg whitespace-pre text-transparent"
-						>{searchText || selectedQuicklinkForArgument.name}</span
+				{#if selectedQuicklinkForArgument}
+					<div
+						class="pointer-events-none absolute top-0 left-0 flex h-full w-full items-center pl-4"
 					>
-					<span class="w-2"></span>
-					<div class="pointer-events-auto">
-						<div class="inline-grid items-center">
-							<span
-								class="invisible col-start-1 row-start-1 px-3 text-base whitespace-pre md:text-sm"
-								aria-hidden="true"
-							>
-								{quicklinkArgument || 'Query'}
-							</span>
+						<span class="text-lg whitespace-pre text-transparent"
+							>{searchText || selectedQuicklinkForArgument.name}</span
+						>
+						<span class="w-2"></span>
+						<div class="pointer-events-auto">
+							<div class="inline-grid items-center">
+								<span
+									class="invisible col-start-1 row-start-1 px-3 text-base whitespace-pre md:text-sm"
+									aria-hidden="true"
+								>
+									{quicklinkArgument || 'Query'}
+								</span>
 
-							<Input
-								class="border-border col-start-1 row-start-1 h-7 w-full"
-								placeholder="Query"
-								bind:value={quicklinkArgument}
-								bind:ref={argumentInputEl}
-								onkeydown={handleArgumentKeydown}
-							/>
+								<Input
+									class="border-border col-start-1 row-start-1 h-7 w-full"
+									placeholder="Query"
+									bind:value={quicklinkArgument}
+									bind:ref={argumentInputEl}
+									onkeydown={handleArgumentKeydown}
+								/>
+							</div>
 						</div>
 					</div>
-				</div>
-			{/if}
-		</div>
-	</header>
-
-	<div class="grow overflow-y-auto">
-		<BaseList
-			items={displayItems.map((item) => ({ ...item, itemType: 'item' }))}
-			onenter={actions.handleEnter}
-			bind:selectedIndex
-			bind:listElement
-		>
-			{#snippet itemSnippet({ item, isSelected, onclick })}
-				{#if item.type === 'calculator'}
-					<Calculator
-						searchText={item.data.value}
-						mathResult={item.data.result}
-						mathResultType={item.data.resultType}
-						{isSelected}
-						onSelect={onclick}
-					/>
-				{:else if item.type === 'plugin'}
-					{@const assetsPath = path.dirname(item.data.pluginPath) + '/assets'}
-					<ListItemBase
-						title={item.data.title}
-						subtitle={item.data.pluginTitle}
-						icon={item.data.icon || 'app-window-16'}
-						{assetsPath}
-						{isSelected}
-						{onclick}
-					>
-						{#snippet accessories()}
-							<span class="text-muted-foreground ml-auto text-xs whitespace-nowrap"> Command </span>
-						{/snippet}
-					</ListItemBase>
-				{:else if item.type === 'app'}
-					<ListItemBase
-						title={item.data.name}
-						subtitle={item.data.comment}
-						icon={item.data.icon_path ?? 'app-window-16'}
-						{isSelected}
-						{onclick}
-					>
-						{#snippet accessories()}
-							<span class="text-muted-foreground ml-auto text-xs whitespace-nowrap">
-								Application
-							</span>
-						{/snippet}
-					</ListItemBase>
-				{:else if item.type === 'quicklink'}
-					<ListItemBase
-						title={item.data.name}
-						subtitle={item.data.link.replace(/\{argument\}/g, '...')}
-						icon={item.data.icon ?? 'link-16'}
-						{isSelected}
-						{onclick}
-					>
-						{#snippet accessories()}
-							<span class="text-muted-foreground ml-auto text-xs whitespace-nowrap">
-								Quicklink
-							</span>
-						{/snippet}
-					</ListItemBase>
 				{/if}
-			{/snippet}
-		</BaseList>
-	</div>
+			</div>
+		</header>
+	{/snippet}
 
-	<CommandPaletteActionBar {selectedItem} {actions} {setSearchText} />
-</main>
+	{#snippet content()}
+		<div class="grow overflow-y-auto">
+			<BaseList
+				items={displayItems.map((item) => ({ ...item, itemType: 'item' }))}
+				onenter={actions.handleEnter}
+				bind:selectedIndex
+				bind:listElement
+			>
+				{#snippet itemSnippet({ item, isSelected, onclick })}
+					{#if item.type === 'calculator'}
+						<Calculator
+							searchText={item.data.value}
+							mathResult={item.data.result}
+							mathResultType={item.data.resultType}
+							{isSelected}
+							onSelect={onclick}
+						/>
+					{:else if item.type === 'plugin'}
+						{@const assetsPath = path.dirname(item.data.pluginPath) + '/assets'}
+						<ListItemBase
+							title={item.data.title}
+							subtitle={item.data.pluginTitle}
+							icon={item.data.icon || 'app-window-16'}
+							{assetsPath}
+							{isSelected}
+							{onclick}
+						>
+							{#snippet accessories()}
+								<span class="text-muted-foreground ml-auto text-xs whitespace-nowrap">
+									Command
+								</span>
+							{/snippet}
+						</ListItemBase>
+					{:else if item.type === 'app'}
+						<ListItemBase
+							title={item.data.name}
+							subtitle={item.data.comment}
+							icon={item.data.icon_path ?? 'app-window-16'}
+							{isSelected}
+							{onclick}
+						>
+							{#snippet accessories()}
+								<span class="text-muted-foreground ml-auto text-xs whitespace-nowrap">
+									Application
+								</span>
+							{/snippet}
+						</ListItemBase>
+					{:else if item.type === 'quicklink'}
+						<ListItemBase
+							title={item.data.name}
+							subtitle={item.data.link.replace(/\{argument\}/g, '...')}
+							icon={item.data.icon ?? 'link-16'}
+							{isSelected}
+							{onclick}
+						>
+							{#snippet accessories()}
+								<span class="text-muted-foreground ml-auto text-xs whitespace-nowrap">
+									Quicklink
+								</span>
+							{/snippet}
+						</ListItemBase>
+					{/if}
+				{/snippet}
+			</BaseList>
+		</div>
+	{/snippet}
+
+	{#snippet footer()}
+		<CommandPaletteActionBar {selectedItem} {actions} {setSearchText} />
+	{/snippet}
+</MainLayout>
