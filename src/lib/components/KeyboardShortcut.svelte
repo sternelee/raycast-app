@@ -21,6 +21,8 @@
 
 	const modifierMap = platform() === 'macos' ? macModifierMap : standardModifierMap;
 
+	const modifierOrder: KeyboardShortcut['modifiers'] = ['ctrl', 'opt', 'shift', 'cmd'];
+
 	const keyMap: Partial<Record<KeyboardShortcut['key'], string>> = {
 		return: '⏎',
 		enter: '⏎',
@@ -36,7 +38,8 @@
 		space: '␣'
 	};
 
-	const symbols = shortcut.modifiers
+	const symbols = [...shortcut.modifiers]
+		.sort((a, b) => modifierOrder.indexOf(a) - modifierOrder.indexOf(b))
 		.map((modifier) => modifierMap[modifier])
 		.concat(keyMap[shortcut.key] ?? shortcut.key.charAt(0).toUpperCase() + shortcut.key.slice(1));
 </script>
