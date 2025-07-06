@@ -10,29 +10,11 @@
 	import { focusManager } from '$lib/focus.svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { sidecarService } from '$lib/sidecar.svelte';
-	import {
-		keyEventMatches,
-		type KeyboardShortcut,
-		getTypedProps,
-		type ComponentType,
-		type ActionCopyToClipboardProps,
-		type ActionOpenInBrowserProps
-	} from '$lib/props';
-	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-	import { openUrl } from '@tauri-apps/plugin-opener';
 	import HeaderInput from './HeaderInput.svelte';
+	import { nodeToActionDefinition } from './nodes/shared/actions';
 
-	const {
-		uiTree,
-		rootNodeId,
-		selectedNodeId,
-		toasts,
-		currentRunningPlugin,
-		primaryAction: primaryActionObject,
-		secondaryAction,
-		actionPanel,
-		allActions
-	} = $derived(uiStore);
+	const { uiTree, rootNodeId, selectedNodeId, toasts, currentRunningPlugin, allActions } =
+		$derived(uiStore);
 
 	type Props = {
 		onPopView: () => void;
@@ -47,7 +29,6 @@
 	let searchInputEl: HTMLInputElement | null = $state(null);
 	const navigationTitle = $derived(rootNode?.props.navigationTitle as string | undefined);
 	const toastToShow = $derived(Array.from(toasts.entries()).sort((a, b) => b[0] - a[0])[0]?.[1]);
-	const showActionPanelDropdown = $derived((allActions?.length ?? 0) > 1);
 	const formValues = new SvelteMap<string, unknown>();
 
 	const assetsPath = $derived(
@@ -79,51 +60,6 @@
 		}
 	}
 
-	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape' && !event.defaultPrevented) {
-			if (event.defaultPrevented) {
-				return;
-			}
-			onPopView();
-			return;
-		}
-
-		for (const actionNode of allActions) {
-			const props = getTypedProps({ ...actionNode, type: actionNode.type as ComponentType });
-			if (props && 'shortcut' in props && props.shortcut) {
-				if (keyEventMatches(event, props.shortcut as KeyboardShortcut)) {
-					event.preventDefault();
-
-					switch (actionNode.type) {
-						case 'Action.CopyToClipboard': {
-							const copyProps = props as ActionCopyToClipboardProps;
-							writeText(copyProps.content);
-							handleDispatch(actionNode.id, 'onCopy', []);
-							break;
-						}
-						case 'Action.OpenInBrowser': {
-							const openProps = props as ActionOpenInBrowserProps;
-							openUrl(openProps.url);
-							handleDispatch(actionNode.id, 'onOpenInBrowser', []);
-							break;
-						}
-						case 'Action.SubmitForm': {
-							handleDispatch(actionNode.id, 'onSubmit', []);
-							break;
-						}
-						case 'Action.Push':
-						case 'Action':
-						default: {
-							handleDispatch(actionNode.id, 'onAction', []);
-							break;
-						}
-					}
-					return;
-				}
-			}
-		}
-	}
-
 	$effect(() => {
 		if (focusManager.activeScope === 'main-input') {
 			tick().then(() => {
@@ -138,8 +74,6 @@
 		}
 	});
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 {#if rootNode}
 	<MainLayout>
@@ -164,7 +98,7 @@
 					{@const searchBarAccessoryId = rootNode?.namedChildren?.searchBarAccessory}
 					{#if searchBarAccessoryId && (rootNode.type === 'List' || rootNode.type === 'Grid' || rootNode.type === 'Form')}
 						{#key searchBarAccessoryId}
-							<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} {onDispatch} />
+							<NodeRenderer nodeId={searchBarAccessoryId} {uiTree} onDispatch={handleDispatch} />
 						{/key}
 					{/if}
 				{/snippet}
@@ -183,24 +117,12 @@
 		{/snippet}
 
 		{#snippet footer()}
-			<ActionBar title={navigationTitle} toast={toastToShow} {onToastAction}>
-				{#snippet primaryAction({ props })}
-					{#if primaryActionObject}
-						<NodeRenderer
-							{...props}
-							nodeId={primaryActionObject.id}
-							{uiTree}
-							onDispatch={handleDispatch}
-							displayAs="button"
-						/>
-					{/if}
-				{/snippet}
-				{#snippet actions()}
-					{#if showActionPanelDropdown && actionPanel}
-						<NodeRenderer nodeId={actionPanel.id} {uiTree} onDispatch={handleDispatch} />
-					{/if}
-				{/snippet}
-			</ActionBar>
+			<ActionBar
+				actions={allActions.map((node) => nodeToActionDefinition(node, handleDispatch))}
+				title={navigationTitle}
+				toast={toastToShow}
+				{onToastAction}
+			/>
 		{/snippet}
 	</MainLayout>
 {/if}

@@ -13,7 +13,30 @@
 	};
 
 	let { showBackButton = false, isLoading = false, onPopView, children, actions }: Props = $props();
+
+	const handleKeydown = (event: KeyboardEvent) => {
+		if (
+			event.key === 'Escape' &&
+			!event.defaultPrevented &&
+			!event.altKey &&
+			!event.ctrlKey &&
+			!event.metaKey
+		) {
+			if (
+				event.target instanceof HTMLElement &&
+				event.target.closest('[data-dropdown-menu-content]')
+			) {
+				// the user has a dropdown open, we want to close the dropdown instead of going back
+				return;
+			}
+
+			event.preventDefault();
+			onPopView?.();
+		}
+	};
 </script>
+
+<svelte:document onkeydown={handleKeydown} />
 
 <header class="relative flex h-15 shrink-0 items-center border-b pr-4 pl-[18px]">
 	{#if showBackButton}

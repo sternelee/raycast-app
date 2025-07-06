@@ -164,16 +164,7 @@
 			console.error('Failed to create snippet:', e);
 		}
 	}
-
-	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-			event.preventDefault();
-			handleSave();
-		}
-	}
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <MainLayout>
 	{#snippet header()}
@@ -232,7 +223,15 @@
 		</div>
 	{/snippet}
 	{#snippet footer()}
-		<ActionBar>
+		<ActionBar
+			actions={[
+				{
+					title: 'Create Snippet',
+					handler: handleSave,
+					shortcut: { key: 'enter', modifiers: ['cmd'] }
+				}
+			]}
+		>
 			{#snippet primaryAction({ props })}
 				<Button {...props} onclick={handleSave}><Save class="mr-2 size-4" /> Create Snippet</Button>
 			{/snippet}

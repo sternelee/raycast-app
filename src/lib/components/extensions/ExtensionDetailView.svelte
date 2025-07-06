@@ -99,6 +99,22 @@
 			console.error('Could not find installed plugin info for command', command);
 		}
 	}
+
+	const actions = $derived.by(() => {
+		if (isInstalled)
+			return [
+				{ title: 'Show Commands', handler: () => {} },
+				{ title: 'Uninstall Extension', handler: () => {} }
+			];
+
+		return [
+			{
+				title: isInstalling ? 'Installing...' : 'Install Extension',
+				handler: onInstall,
+				disabled: isInstalling
+			}
+		];
+	});
 </script>
 
 <div class="flex grow flex-col gap-6 overflow-x-hidden overflow-y-auto p-6">
@@ -289,6 +305,7 @@
 <ActionBar
 	title={extension.title}
 	icon={extension.icons.light ? { source: extension.icons.light, mask: 'circle' } : undefined}
+	{actions}
 >
 	{#snippet primaryAction({ props })}
 		{#if isInstalled}
@@ -339,16 +356,5 @@
 				<KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
 			</Button>
 		{/if}
-	{/snippet}
-	{#snippet actions()}
-		<ActionMenu>
-			{#if isInstalled}
-				<DropdownMenu.Item>Uninstall Extension</DropdownMenu.Item>
-			{:else}
-				<DropdownMenu.Item onclick={onInstall} disabled={isInstalling}>
-					{isInstalling ? 'Installing...' : 'Install Extension'}
-				</DropdownMenu.Item>
-			{/if}
-		</ActionMenu>
 	{/snippet}
 </ActionBar>

@@ -113,26 +113,6 @@
 			focusManager.releaseFocus('quicklink-argument');
 		}
 	}
-
-	async function handleKeyDown(e: KeyboardEvent) {
-		if (!selectedItem) return;
-
-		const keyMap = {
-			'C-S-c': selectedItem.type === 'plugin' ? actions.handleCopyDeeplink : undefined,
-			'C-S-,': selectedItem.type === 'plugin' ? actions.handleConfigureCommand : undefined,
-			'C-.': selectedItem.type === 'app' ? actions.handleCopyAppName : undefined,
-			'C-S-.': selectedItem.type === 'app' ? actions.handleCopyAppPath : undefined,
-			'C-h': selectedItem.type === 'app' ? actions.handleHideApp : undefined
-		};
-
-		const shortcut = `${e.metaKey ? 'M-' : ''}${e.ctrlKey ? 'C-' : ''}${e.shiftKey ? 'S-' : ''}${e.key.toLowerCase()}`;
-		const action = keyMap[shortcut as keyof typeof keyMap];
-
-		if (action) {
-			e.preventDefault();
-			await action();
-		}
-	}
 </script>
 
 <MainLayout>
@@ -145,7 +125,6 @@
 						: 'Search for apps and commands...'}
 					bind:value={searchText}
 					bind:ref={searchInputEl}
-					onkeydown={handleKeyDown}
 					autofocus
 					class="!pl-0"
 				/>

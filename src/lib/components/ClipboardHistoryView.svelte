@@ -18,6 +18,7 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import InfoList from './InfoList.svelte';
+	import type { ActionDefinition } from './nodes/shared/actions';
 
 	type Props = {
 		onBack: () => void;
@@ -145,23 +146,6 @@
 		resetAndFetch();
 	};
 
-	const handleKeydown = (e: KeyboardEvent) => {
-		if (e.key === 'Escape' && !e.defaultPrevented) {
-			e.preventDefault();
-			onBack();
-			return;
-		}
-		if (!selectedItem) return;
-		if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'p') {
-			e.preventDefault();
-			handlePin(selectedItem);
-		}
-		if (e.ctrlKey && e.key.toLowerCase() === 'x') {
-			e.preventDefault();
-			handleDelete(selectedItem);
-		}
-	};
-
 	onMount(() => {
 		const container = listContainerEl;
 		if (!container) return;
@@ -224,9 +208,28 @@
 
 		processContent();
 	});
-</script>
 
-<svelte:window onkeydown={handleKeydown} />
+	const actions: ActionDefinition[] = $derived(
+		selectedItem
+			? [
+					{
+						title: 'Copy to Clipboard',
+						handler: () => handleCopy(selectedItem)
+					},
+					{
+						title: selectedItem.isPinned ? 'Unpin' : 'Pin',
+						shortcut: { key: 'P', modifiers: ['cmd', 'shift'] },
+						handler: () => handlePin(selectedItem)
+					},
+					{
+						title: 'Delete',
+						shortcut: { key: 'x', modifiers: ['ctrl'] },
+						handler: () => handleDelete(selectedItem)
+					}
+				]
+			: []
+	);
+</script>
 
 <MainLayout>
 	{#snippet header()}
@@ -351,31 +354,7 @@
 
 	{#snippet footer()}
 		{#if selectedItem}
-			<ActionBar>
-				{#snippet primaryAction({ props })}
-					<Button {...props} onclick={() => handleCopy(selectedItem)}>
-						Copy to Clipboard <Kbd>⏎</Kbd>
-					</Button>
-				{/snippet}
-				{#snippet actions()}
-					<ActionMenu>
-						<DropdownMenu.Item onclick={() => handlePin(selectedItem)}>
-							<Pin class="mr-2 size-4" />
-							<span>{selectedItem.isPinned ? 'Unpin' : 'Pin'}</span>
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'P', modifiers: ['cmd', 'shift'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-						<DropdownMenu.Item onclick={() => handleDelete(selectedItem)}>
-							<Trash class="mr-2 size-4" />
-							<span>Delete</span>
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-					</ActionMenu>
-				{/snippet}
-			</ActionBar>
+			<ActionBar {actions} />
 		{/if}
 	{/snippet}
 </MainLayout>

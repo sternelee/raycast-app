@@ -23,6 +23,7 @@
 	import { keyEventMatches, type KeyboardShortcut as Shortcut } from '$lib/props/actions';
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
+	import type { ActionDefinition } from './nodes/shared/actions';
 
 	type Props = {
 		onBack: () => void;
@@ -183,36 +184,6 @@
 		openUrl(selectedListExtension.source_url);
 	}
 
-	function handleGlobalKeyDown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && !e.defaultPrevented) {
-			e.preventDefault();
-			if (expandedImageUrl) {
-				expandedImageUrl = null;
-			} else if (selectedExtension) {
-				selectedExtension = null;
-			} else {
-				onBack();
-			}
-			return;
-		}
-
-		if (!selectedExtension && selectedListExtension) {
-			if (keyEventMatches(e, openInBrowserShortcut)) {
-				e.preventDefault();
-				handleOpenInBrowser();
-			} else if (keyEventMatches(e, copyUrlShortcut)) {
-				e.preventDefault();
-				handleCopyExtensionUrl();
-			} else if (keyEventMatches(e, viewReadmeShortcut) && selectedListExtension.readme_url) {
-				e.preventDefault();
-				handleViewReadme();
-			} else if (keyEventMatches(e, viewSourceShortcut) && selectedListExtension.source_url) {
-				e.preventDefault();
-				handleViewSourceCode();
-			}
-		}
-	}
-
 	async function installExtension(extensionToInstall: Extension) {
 		if (isInstalling) return;
 		isInstalling = true;
@@ -265,9 +236,45 @@
 			isInstalling = false;
 		}
 	}
-</script>
 
-<svelte:window onkeydown={handleGlobalKeyDown} />
+	const actions: ActionDefinition[] = $derived(
+		selectedListExtension
+			? [
+					{
+						title: 'Show Details',
+						handler: () => (selectedExtension = selectedListExtension)
+					},
+					{
+						title: isInstalling ? 'Installing...' : 'Install Extension',
+						handler: () => installExtension(selectedListExtension),
+						disabled: isInstalling
+					},
+					{
+						title: 'Open in Browser',
+						shortcut: { key: 'o', modifiers: ['opt', 'ctrl'] },
+						handler: handleOpenInBrowser
+					},
+					{
+						title: 'Copy Extension URL',
+						shortcut: { key: '.', modifiers: ['ctrl'] },
+						handler: handleCopyExtensionUrl
+					},
+					{
+						title: 'View README',
+						shortcut: { key: 'r', modifiers: ['opt', 'shift', 'ctrl'] },
+						handler: handleViewReadme,
+						disabled: !selectedListExtension.readme_url
+					},
+					{
+						title: 'View Source Code',
+						shortcut: { key: 'o', modifiers: ['shift', 'ctrl'] },
+						handler: handleViewSourceCode,
+						disabled: !selectedListExtension.source_url
+					}
+				]
+			: []
+	);
+</script>
 
 <MainLayout>
 	{#snippet header()}
@@ -320,55 +327,8 @@
 				icon={selectedListExtension.icons.light
 					? { source: selectedListExtension.icons.light, mask: 'circle' }
 					: undefined}
-			>
-				{#snippet primaryAction({ props })}
-					<Button {...props} onclick={() => (selectedExtension = selectedListExtension)}>
-						Show Details
-						<KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
-					</Button>
-				{/snippet}
-				{#snippet actions()}
-					<ActionMenu>
-						<DropdownMenu.Item
-							onclick={() => installExtension(selectedListExtension)}
-							disabled={isInstalling}
-						>
-							{isInstalling ? 'Installing...' : 'Install Extension'}
-						</DropdownMenu.Item>
-						<DropdownMenu.Separator />
-						<DropdownMenu.Item onclick={handleOpenInBrowser}>
-							Open in Browser
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'o', modifiers: ['opt', 'ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-						<DropdownMenu.Item onclick={handleCopyExtensionUrl}>
-							Copy Extension URL
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: '.', modifiers: ['ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-						<DropdownMenu.Item
-							onclick={handleViewReadme}
-							disabled={!selectedListExtension.readme_url}
-						>
-							View README
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'r', modifiers: ['opt', 'shift', 'ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-						<DropdownMenu.Item
-							onclick={handleViewSourceCode}
-							disabled={!selectedListExtension.source_url}
-						>
-							View Source Code
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'o', modifiers: ['shift', 'ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-					</ActionMenu>
-				{/snippet}
-			</ActionBar>
+				{actions}
+			/>
 		{/if}
 	{/snippet}
 </MainLayout>

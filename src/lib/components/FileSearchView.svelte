@@ -17,6 +17,7 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import InfoList from './InfoList.svelte';
+	import type { ActionDefinition } from './nodes/shared/actions';
 
 	type Props = {
 		onBack: () => void;
@@ -90,30 +91,6 @@
 		fetchFiles();
 	};
 
-	const handleKeydown = (e: KeyboardEvent) => {
-		if (e.key === 'Escape' && !e.defaultPrevented) {
-			e.preventDefault();
-			onBack();
-			return;
-		}
-		if (!selectedItem) return;
-
-		if (e.ctrlKey && e.key.toLowerCase() === 'c') {
-			e.preventDefault();
-			handleCopyPath(selectedItem);
-		}
-
-		if (e.ctrlKey && e.key.toLowerCase() === 'x') {
-			e.preventDefault();
-			handleDelete(selectedItem);
-		}
-
-		if (e.metaKey && e.key === 'Enter') {
-			e.preventDefault();
-			handleShow(selectedItem);
-		}
-	};
-
 	$effect(() => {
 		const term = searchText;
 		if (!term) {
@@ -131,9 +108,33 @@
 			return () => clearTimeout(timer);
 		});
 	});
-</script>
 
-<svelte:window onkeydown={handleKeydown} />
+	const actions: ActionDefinition[] = $derived(
+		selectedItem
+			? [
+					{
+						title: 'Open',
+						handler: () => handleOpen(selectedItem)
+					},
+					{
+						title: 'Show in File Manager',
+						shortcut: { key: 'Enter', modifiers: ['cmd'] },
+						handler: () => handleShow(selectedItem)
+					},
+					{
+						title: 'Copy Path',
+						shortcut: { key: 'c', modifiers: ['ctrl'] },
+						handler: () => handleCopyPath(selectedItem)
+					},
+					{
+						title: 'Move to Trash',
+						shortcut: { key: 'x', modifiers: ['ctrl'] },
+						handler: () => handleDelete(selectedItem)
+					}
+				]
+			: []
+	);
+</script>
 
 <MainLayout>
 	{#snippet header()}
@@ -204,39 +205,7 @@
 
 	{#snippet footer()}
 		{#if selectedItem}
-			<ActionBar>
-				{#snippet primaryAction({ props })}
-					<Button {...props} onclick={() => handleOpen(selectedItem)}>
-						Open <KeyboardShortcut shortcut={{ key: 'enter', modifiers: [] }} />
-					</Button>
-				{/snippet}
-				{#snippet actions()}
-					<ActionMenu>
-						<DropdownMenu.Item onclick={() => handleShow(selectedItem)}>
-							<Eye class="mr-2 size-4" />
-							<span>Show in File Manager</span>
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'Enter', modifiers: ['cmd'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-						<DropdownMenu.Item onclick={() => handleCopyPath(selectedItem)}>
-							<Copy class="mr-2 size-4" />
-							<span>Copy Path</span>
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'c', modifiers: ['ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-						<DropdownMenu.Separator />
-						<DropdownMenu.Item class="text-red-500" onclick={() => handleDelete(selectedItem)}>
-							<Trash class="mr-2 size-4" />
-							<span>Move to Trash</span>
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-					</ActionMenu>
-				{/snippet}
-			</ActionBar>
+			<ActionBar {actions} />
 		{/if}
 	{/snippet}
 </MainLayout>

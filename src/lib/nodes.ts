@@ -1,8 +1,5 @@
 import type { Component } from 'svelte';
 import type { UINode } from './types';
-import Action from '$lib/components/nodes/actions/Action.svelte';
-import ActionPanel from '$lib/components/nodes/ActionPanel.svelte';
-import ActionPanelSection from '$lib/components/nodes/ActionPanelSection.svelte';
 import Detail from '$lib/components/nodes/detail/Detail.svelte';
 import Metadata from '$lib/components/nodes/detail/Metadata.svelte';
 import MetadataLabel from '$lib/components/nodes/detail/MetadataLabel.svelte';
@@ -29,13 +26,6 @@ export const componentMap = new Map<
 		onDispatch: (instanceId: number, handlerName: string, args: unknown[]) => void;
 	}>
 >([
-	['Action', Action],
-	['ActionPanel', ActionPanel],
-	['ActionPanel.Section', ActionPanelSection],
-	['Action.CopyToClipboard', Action],
-	['Action.OpenInBrowser', Action],
-	['Action.Push', Action],
-	['Action.SubmitForm', Action],
 	['Detail', Detail],
 	['Detail.Metadata', Metadata],
 	['Detail.Metadata.Label', MetadataLabel],

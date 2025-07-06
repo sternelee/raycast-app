@@ -14,6 +14,7 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import InfoList from './InfoList.svelte';
+	import type { ActionDefinition } from './nodes/shared/actions';
 
 	type Props = {
 		onBack: () => void;
@@ -130,20 +131,6 @@
 		fetchSnippets();
 	};
 
-	const handleKeydown = (e: KeyboardEvent) => {
-		if (e.key === 'Escape' && !e.defaultPrevented) {
-			e.preventDefault();
-			onBack();
-			return;
-		}
-		if (!selectedItem) return;
-
-		if (e.ctrlKey && e.key.toLowerCase() === 'x') {
-			e.preventDefault();
-			handleDelete(selectedItem);
-		}
-	};
-
 	onMount(() => {
 		fetchSnippets();
 	});
@@ -159,9 +146,23 @@
 			return () => clearTimeout(timer);
 		});
 	});
-</script>
 
-<svelte:window onkeydown={handleKeydown} />
+	const actions: ActionDefinition[] = $derived(
+		selectedItem
+			? [
+					{
+						title: 'Paste',
+						handler: () => handlePaste(selectedItem)
+					},
+					{
+						title: 'Delete',
+						shortcut: { key: 'x', modifiers: ['ctrl'] },
+						handler: () => handleDelete(selectedItem)
+					}
+				]
+			: []
+	);
+</script>
 
 <MainLayout>
 	{#snippet header()}
@@ -230,24 +231,7 @@
 
 	{#snippet footer()}
 		{#if selectedItem}
-			<ActionBar>
-				{#snippet primaryAction({ props })}
-					<Button {...props} onclick={() => handlePaste(selectedItem)}>
-						Paste <Kbd>⏎</Kbd>
-					</Button>
-				{/snippet}
-				{#snippet actions()}
-					<ActionMenu>
-						<DropdownMenu.Item onclick={() => handleDelete(selectedItem)}>
-							<Trash class="mr-2 size-4" />
-							<span>Delete</span>
-							<DropdownMenu.Shortcut>
-								<KeyboardShortcut shortcut={{ key: 'x', modifiers: ['ctrl'] }} />
-							</DropdownMenu.Shortcut>
-						</DropdownMenu.Item>
-					</ActionMenu>
-				{/snippet}
-			</ActionBar>
+			<ActionBar {actions} />
 		{/if}
 	{/snippet}
 </MainLayout>
