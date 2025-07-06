@@ -147,8 +147,8 @@
 			/>
 
 			{#if selectedQuicklinkForArgument}
-				<div class="pointer-events-none absolute top-0 left-0 flex h-full w-full items-center">
-					<span class="whitespace-pre text-transparent"
+				<div class="pointer-events-none absolute top-0 left-0 flex h-full w-full items-center pl-4">
+					<span class="text-lg whitespace-pre text-transparent"
 						>{searchText || selectedQuicklinkForArgument.name}</span
 					>
 					<span class="w-2"></span>
@@ -162,7 +162,7 @@
 							</span>
 
 							<Input
-								class="col-start-1 row-start-1 h-7 w-full"
+								class="border-border col-start-1 row-start-1 h-7 w-full"
 								placeholder="Query"
 								bind:value={quicklinkArgument}
 								bind:ref={argumentInputEl}
