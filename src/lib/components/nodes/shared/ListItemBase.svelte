@@ -21,6 +21,7 @@
 	type="button"
 	class="hover:bg-accent/50 flex h-12 w-full items-center gap-3 rounded-md px-2 text-left"
 	class:!bg-accent={isSelected}
+	data-testid="list-item"
 	{...restProps}
 >
 	{#if icon}

@@ -1,5 +1,5 @@
 import { mockedClipboard, mockedCore } from '$lib/__mocks__/tauri.mock';
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommandPalette from './CommandPalette.svelte';
@@ -177,16 +177,16 @@ describe('CommandPalette.svelte', () => {
 				onRunPlugin
 			});
 
-			const listContainer = container.querySelector('.grow.overflow-y-auto');
+			const listContainer = within(container).getByTestId('command-palette-content');
 
-			const initialListCount = listContainer!.getElementsByTagName('button').length;
+			const initialListCount = within(listContainer).getAllByTestId('list-item').length;
 
 			const searchInput = screen.getByPlaceholderText('Search for apps and commands...');
 			await user.type(searchInput, 'Mock Plugin 1');
 
 			expect(listContainer).toBeInTheDocument();
 
-			const listItems = listContainer!.getElementsByTagName('button');
+			const listItems = within(listContainer).getAllByTestId('list-item');
 			expect(listItems.length).not.toEqual(initialListCount);
 			expect(listItems[0]).toHaveClass('!bg-accent');
 		});

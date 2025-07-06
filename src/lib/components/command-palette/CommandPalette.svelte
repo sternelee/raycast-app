@@ -163,7 +163,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<div class="grow overflow-y-auto">
+		<div class="grow overflow-y-auto" data-testid="command-palette-content">
 			<BaseList
 				items={displayItems.map((item) => ({ ...item, itemType: 'item' }))}
 				onenter={actions.handleEnter}
