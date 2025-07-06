@@ -13,10 +13,16 @@
 	import type { VListHandle } from 'virtua/svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import { viewManager } from '$lib/viewManager.svelte';
+	import ExtensionInstallConfirm from './extensions/ExtensionInstallConfirm.svelte';
 
 	type Props = {
 		onBack: () => void;
 		onInstall: () => void;
+	};
+
+	type Violation = {
+		commandName: string;
+		reason: string;
 	};
 
 	let { onBack, onInstall }: Props = $props();
@@ -25,6 +31,8 @@
 	let expandedImageUrl = $state<string | null>(null);
 	let isInstalling = $state(false);
 	let vlistInstance = $state<VListHandle | null>(null);
+	let showConfirmationDialog = $state(false);
+	let confirmationViolations = $state<Violation[]>([]);
 
 	$effect(() => {
 		const ext = viewManager.extensionToSelect;
@@ -64,13 +72,41 @@
 		if (!selectedExtension || isInstalling) return;
 		isInstalling = true;
 		try {
+			const result = await invoke<{
+				status: 'success' | 'requiresConfirmation';
+				violations?: Violation[];
+			}>('install_extension', {
+				downloadUrl: selectedExtension.download_url,
+				slug: selectedExtension.name,
+				force: false
+			});
+
+			if (result.status === 'success') {
+				onInstall();
+			} else if (result.status === 'requiresConfirmation' && result.violations) {
+				confirmationViolations = result.violations;
+				showConfirmationDialog = true;
+			}
+		} catch (e) {
+			console.error('Installation failed', e);
+		} finally {
+			isInstalling = false;
+		}
+	}
+
+	async function handleForceInstall() {
+		showConfirmationDialog = false;
+		if (!selectedExtension) return;
+		isInstalling = true;
+		try {
 			await invoke('install_extension', {
 				downloadUrl: selectedExtension.download_url,
-				slug: selectedExtension.name
+				slug: selectedExtension.name,
+				force: true
 			});
 			onInstall();
 		} catch (e) {
-			console.error('Installation failed', e);
+			console.error('Forced installation failed', e);
 		} finally {
 			isInstalling = false;
 		}
@@ -121,3 +157,10 @@
 {#if expandedImageUrl}
 	<ImageLightbox imageUrl={expandedImageUrl} onClose={() => (expandedImageUrl = null)} />
 {/if}
+
+<ExtensionInstallConfirm
+	bind:open={showConfirmationDialog}
+	violations={confirmationViolations}
+	onconfirm={handleForceInstall}
+	oncancel={() => (showConfirmationDialog = false)}
+/>
