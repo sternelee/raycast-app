@@ -33,7 +33,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <DropdownMenu.Root bind:open>
-	<DropdownMenu.Trigger>
+	<DropdownMenu.Trigger data-testid="action-menu-trigger">
 		{#snippet child({ props })}
 			<Button {...props} variant="ghost" size="action">
 				Actions
