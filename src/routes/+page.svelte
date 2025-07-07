@@ -22,6 +22,7 @@
 	import clipboardHistoryCommandIcon from '$lib/assets/command-clipboard-history-1616x16@2x.png?inline';
 	import fileSearchCommandIcon from '$lib/assets/command-file-search-1616x16@2x.png?inline';
 	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
+	import storeCommandIcon from '$lib/assets/command-store-1616x16@2x.png?inline';
 
 	const storePlugin: PluginInfo = {
 		title: 'Store',
@@ -30,7 +31,7 @@
 		pluginName: 'raycast',
 		commandName: 'store',
 		pluginPath: 'builtin:store',
-		icon: 'store-16',
+		icon: storeCommandIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'

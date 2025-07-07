@@ -304,7 +304,9 @@
 
 <ActionBar
 	title={extension.title}
-	icon={extension.icons.light ? { source: extension.icons.light, mask: 'circle' } : undefined}
+	icon={extension.icons.light
+		? { source: extension.icons.light, mask: 'roundedRectangle' }
+		: undefined}
 	{actions}
 >
 	{#snippet primaryAction({ props })}

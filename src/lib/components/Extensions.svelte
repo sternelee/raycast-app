@@ -24,6 +24,7 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import type { ActionDefinition } from './nodes/shared/actions';
+	import storeCommandIcon from '$lib/assets/command-store-1616x16@2x.png?inline';
 
 	type Props = {
 		onBack: () => void;
@@ -322,13 +323,7 @@
 
 	{#snippet footer()}
 		{#if !selectedExtension && selectedListExtension}
-			<ActionBar
-				title={selectedListExtension.title}
-				icon={selectedListExtension.icons.light
-					? { source: selectedListExtension.icons.light, mask: 'circle' }
-					: undefined}
-				{actions}
-			/>
+			<ActionBar title="Store" icon={storeCommandIcon} {actions} />
 		{/if}
 	{/snippet}
 </MainLayout>
