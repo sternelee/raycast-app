@@ -15,6 +15,7 @@
 	import Header from './layout/Header.svelte';
 	import InfoList from './InfoList.svelte';
 	import type { ActionDefinition } from './nodes/shared/actions';
+	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
 
 	type Props = {
 		onBack: () => void;
@@ -231,7 +232,7 @@
 
 	{#snippet footer()}
 		{#if selectedItem}
-			<ActionBar {actions} />
+			<ActionBar {actions} icon={snippetIcon} title="Search Snippets" />
 		{/if}
 	{/snippet}
 </MainLayout>

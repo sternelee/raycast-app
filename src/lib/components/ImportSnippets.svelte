@@ -7,6 +7,7 @@
 	import { ArrowLeft, CheckCircle, Info, ArrowRight, Loader2 } from '@lucide/svelte';
 	import ActionBar from '$lib/components/nodes/shared/ActionBar.svelte';
 	import { onMount } from 'svelte';
+	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
 
 	type SnippetToImport = {
 		name: string;
@@ -128,10 +129,7 @@
 		{/if}
 	</div>
 
-	<ActionBar
-		title={importState === 'idle' || importState === 'importing' ? 'Import Snippets' : undefined}
-		icon={importState === 'idle' || importState === 'importing' ? 'snippets-16' : undefined}
-	>
+	<ActionBar title="Import Snippets" icon={snippetIcon}>
 		{#snippet primaryAction()}
 			{#if importState === 'result'}
 				<Button

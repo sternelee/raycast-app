@@ -21,6 +21,7 @@
 	import CommandDeeplinkConfirm from '$lib/components/CommandDeeplinkConfirm.svelte';
 	import clipboardHistoryCommandIcon from '$lib/assets/command-clipboard-history-1616x16@2x.png?inline';
 	import fileSearchCommandIcon from '$lib/assets/command-file-search-1616x16@2x.png?inline';
+	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
 
 	const storePlugin: PluginInfo = {
 		title: 'Store',
@@ -55,7 +56,7 @@
 		pluginName: 'snippets',
 		commandName: 'search-snippets',
 		pluginPath: 'builtin:search-snippets',
-		icon: 'snippets-16',
+		icon: snippetIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'
@@ -81,7 +82,7 @@
 		pluginName: 'snippets',
 		commandName: 'create-snippet',
 		pluginPath: 'builtin:create-snippet',
-		icon: 'snippets-16',
+		icon: snippetIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'
@@ -94,7 +95,7 @@
 		pluginName: 'snippets',
 		commandName: 'import-snippets',
 		pluginPath: 'builtin:import-snippets',
-		icon: 'upload-16',
+		icon: snippetIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'

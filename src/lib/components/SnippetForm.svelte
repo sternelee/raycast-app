@@ -9,6 +9,7 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import ActionBar from './nodes/shared/ActionBar.svelte';
+	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
 
 	type Props = {
 		onBack: () => void;
@@ -231,6 +232,8 @@
 					shortcut: { key: 'enter', modifiers: ['cmd'] }
 				}
 			]}
+			icon={snippetIcon}
+			title="Create Snippet"
 		>
 			{#snippet primaryAction({ props })}
 				<Button {...props} onclick={handleSave}><Save class="mr-2 size-4" /> Create Snippet</Button>
