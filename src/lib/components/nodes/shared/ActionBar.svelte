@@ -68,7 +68,7 @@
 	{#if toast}
 		<Toast {toast} {onToastAction} />
 	{:else if title || icon}
-		<div class="flex min-w-0 items-center gap-2">
+		<div class="flex min-w-0 items-center gap-2.5 pl-1">
 			{#if icon}
 				<Icon {icon} class="size-5 shrink-0" />
 			{/if}
