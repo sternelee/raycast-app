@@ -18,6 +18,7 @@
 	import Header from './layout/Header.svelte';
 	import InfoList from './InfoList.svelte';
 	import type { ActionDefinition } from './nodes/shared/actions';
+	import fileSearchCommandIcon from '$lib/assets/command-file-search-1616x16@2x.png?inline';
 
 	type Props = {
 		onBack: () => void;
@@ -205,7 +206,7 @@
 
 	{#snippet footer()}
 		{#if selectedItem}
-			<ActionBar {actions} />
+			<ActionBar {actions} icon={fileSearchCommandIcon} title="Search Files" />
 		{/if}
 	{/snippet}
 </MainLayout>

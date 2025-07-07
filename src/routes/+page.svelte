@@ -20,6 +20,7 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import CommandDeeplinkConfirm from '$lib/components/CommandDeeplinkConfirm.svelte';
 	import clipboardHistoryCommandIcon from '$lib/assets/command-clipboard-history-1616x16@2x.png?inline';
+	import fileSearchCommandIcon from '$lib/assets/command-file-search-1616x16@2x.png?inline';
 
 	const storePlugin: PluginInfo = {
 		title: 'Store',
@@ -106,7 +107,7 @@
 		pluginName: 'file-search',
 		commandName: 'search-files',
 		pluginPath: 'builtin:file-search',
-		icon: 'search-16',
+		icon: fileSearchCommandIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'
