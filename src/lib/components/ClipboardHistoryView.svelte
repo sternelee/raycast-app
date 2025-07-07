@@ -19,6 +19,7 @@
 	import Header from './layout/Header.svelte';
 	import InfoList from './InfoList.svelte';
 	import type { ActionDefinition } from './nodes/shared/actions';
+	import clipboardHistoryCommandIcon from '$lib/assets/command-clipboard-history-1616x16@2x.png?inline';
 
 	type Props = {
 		onBack: () => void;
@@ -354,7 +355,7 @@
 
 	{#snippet footer()}
 		{#if selectedItem}
-			<ActionBar {actions} />
+			<ActionBar {actions} icon={clipboardHistoryCommandIcon} title="Clipboard History" />
 		{/if}
 	{/snippet}
 </MainLayout>

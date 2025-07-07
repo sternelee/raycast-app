@@ -19,6 +19,7 @@
 	import FileSearchView from '$lib/components/FileSearchView.svelte';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import CommandDeeplinkConfirm from '$lib/components/CommandDeeplinkConfirm.svelte';
+	import clipboardHistoryCommandIcon from '$lib/assets/command-clipboard-history-1616x16@2x.png?inline';
 
 	const storePlugin: PluginInfo = {
 		title: 'Store',
@@ -40,7 +41,7 @@
 		pluginName: 'clipboard-history',
 		commandName: 'clipboard-history',
 		pluginPath: 'builtin:history',
-		icon: 'copy-clipboard-16',
+		icon: clipboardHistoryCommandIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'
