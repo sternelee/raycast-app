@@ -27,7 +27,10 @@
 	const selectedItemNode = $derived(uiTree.get(selectedNodeId!));
 	let searchText = $state('');
 	let searchInputEl: HTMLInputElement | null = $state(null);
-	const navigationTitle = $derived(rootNode?.props.navigationTitle as string | undefined);
+	const icon = $derived(currentRunningPlugin?.icon);
+	const navigationTitle = $derived(
+		(rootNode?.props.navigationTitle as string | undefined) ?? currentRunningPlugin?.title
+	);
 	const toastToShow = $derived(Array.from(toasts.entries()).sort((a, b) => b[0] - a[0])[0]?.[1]);
 	const formValues = new SvelteMap<string, unknown>();
 
@@ -119,6 +122,7 @@
 		{#snippet footer()}
 			<ActionBar
 				actions={allActions.map((node) => nodeToActionDefinition(node, handleDispatch))}
+				{icon}
 				title={navigationTitle}
 				toast={toastToShow}
 				{onToastAction}
