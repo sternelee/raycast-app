@@ -23,6 +23,7 @@
 	import fileSearchCommandIcon from '$lib/assets/command-file-search-1616x16@2x.png?inline';
 	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
 	import storeCommandIcon from '$lib/assets/command-store-1616x16@2x.png?inline';
+	import quicklinkIcon from '$lib/assets/quicklinks-package-1616x16@2x.png?inline';
 
 	const storePlugin: PluginInfo = {
 		title: 'Store',
@@ -70,7 +71,7 @@
 		pluginName: 'raycast',
 		commandName: 'create-quicklink',
 		pluginPath: 'builtin:create-quicklink',
-		icon: 'link-16',
+		icon: quicklinkIcon,
 		preferences: [],
 		mode: 'view',
 		owner: 'raycast'

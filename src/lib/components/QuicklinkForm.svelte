@@ -11,6 +11,7 @@
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import ActionBar from './nodes/shared/ActionBar.svelte';
+	import quicklinkIcon from '$lib/assets/quicklinks-package-1616x16@2x.png?inline';
 
 	type AppInfo = {
 		name: string;
@@ -129,7 +130,7 @@
 		</div>
 	{/snippet}
 	{#snippet footer()}
-		<ActionBar>
+		<ActionBar icon={quicklinkIcon} title="Create Quicklink">
 			{#snippet primaryAction({ props })}
 				<Button {...props} onclick={handleSave}><Save class="mr-2 size-4" /> Save Quicklink</Button>
 			{/snippet}
