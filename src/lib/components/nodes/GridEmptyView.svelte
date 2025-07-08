@@ -20,15 +20,15 @@
 </script>
 
 {#if componentProps}
-	<div class="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
+	<div class="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
 		{#if componentProps.icon}
 			<Icon icon={componentProps.icon} class="size-32 opacity-50" />
 		{:else}
-			<img src={defaultIcon} class="w-32" alt="No results" />
+			<img src={defaultIcon} class="mb-6 w-[90px]" alt="No results" />
 		{/if}
 		<h2 class="text-lg font-medium">{componentProps.title}</h2>
 		{#if componentProps.description}
-			<p class="text-muted-foreground max-w-sm text-sm">
+			<p class="text-muted-foreground max-w-md text-sm">
 				{componentProps.description}
 			</p>
 		{/if}
