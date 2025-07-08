@@ -98,7 +98,7 @@
 				<Button
 					{...popoverTriggerProps}
 					variant="outline"
-					class="h-9 w-64 justify-between !px-2.5"
+					class="!border-border h-9 w-64 justify-between !px-2.5"
 					role="combobox"
 					aria-expanded={open}
 					title={componentProps.tooltip}
