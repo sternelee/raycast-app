@@ -97,8 +97,31 @@ class ToastImpl implements api.Toast {
 	}
 }
 
-export async function showToast(options: api.Toast.Options): Promise<api.Toast> {
+export async function showToast(options: api.Toast.Options): Promise<api.Toast>;
+export async function showToast(
+	style: api.Toast.Style,
+	title: string,
+	message?: string
+): Promise<api.Toast>;
+
+export async function showToast(
+	optionsOrStyle: api.Toast.Options | api.Toast.Style,
+	title?: string,
+	message?: string
+): Promise<api.Toast> {
+	let options: api.Toast.Options;
+
+	if (typeof optionsOrStyle === 'object' && optionsOrStyle !== null) {
+		options = optionsOrStyle;
+	} else {
+		options = {
+			style: optionsOrStyle,
+			title: title as string,
+			message
+		};
+	}
+
 	const toast = new ToastImpl(options);
-	toast._sendShowCommand();
+	await toast.show();
 	return toast;
 }
