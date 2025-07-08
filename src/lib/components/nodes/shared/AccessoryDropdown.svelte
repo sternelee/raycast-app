@@ -44,7 +44,7 @@
 
 	$effect(() => {
 		if (componentProps && !isInitialized) {
-			const initial = componentProps.defaultValue;
+			const initial = componentProps.defaultValue ?? componentProps.value;
 			if (initial !== undefined) {
 				internalValue = initial;
 			} else if (firstItemValue !== undefined) {

@@ -7,6 +7,7 @@ const GridSection = createWrapperComponent('Grid.Section');
 const GridDropdown = createWrapperComponent('Grid.Dropdown');
 const GridDropdownItem = createWrapperComponent('Grid.Dropdown.Item');
 const GridDropdownSection = createWrapperComponent('Grid.Dropdown.Section');
+const GridEmptyView = createSlottedComponent('Grid.EmptyView', ['actions']);
 
 const Inset = {
 	Small: 'small',
@@ -14,11 +15,18 @@ const Inset = {
 	Large: 'large'
 } as const;
 
+const Fit = {
+	Contain: 'contain',
+	Fill: 'fill'
+} as const;
+
 Object.assign(Grid, {
 	Section: GridSection,
 	Item: GridItem,
 	Dropdown: GridDropdown,
-	Inset: Inset
+	EmptyView: GridEmptyView,
+	Inset,
+	Fit
 });
 Object.assign(GridDropdown, {
 	Item: GridDropdownItem,

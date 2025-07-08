@@ -18,7 +18,12 @@ import {
 	DetailMetadataTagListItemPropsSchema,
 	DetailMetadataSeparatorPropsSchema
 } from './detail';
-import { GridPropsSchema, GridItemPropsSchema } from './grid';
+import {
+	GridPropsSchema,
+	GridItemPropsSchema,
+	GridSectionPropsSchema,
+	GridEmptyViewPropsSchema
+} from './grid';
 import { ViewSectionPropsSchema } from './section';
 import {
 	FormPropsSchema,
@@ -73,8 +78,9 @@ export const componentSchemas = {
 	'List.Item.Detail.Metadata.Separator': DetailMetadataSeparatorPropsSchema,
 
 	Grid: GridPropsSchema,
-	'Grid.Section': ViewSectionPropsSchema,
+	'Grid.Section': GridSectionPropsSchema,
 	'Grid.Item': GridItemPropsSchema,
+	'Grid.EmptyView': GridEmptyViewPropsSchema,
 	'Grid.Dropdown': DropdownPropsSchema,
 	'Grid.Dropdown.Section': DropdownSectionPropsSchema,
 	'Grid.Dropdown.Item': DropdownItemPropsSchema,
@@ -103,8 +109,7 @@ export type ComponentType = keyof Schemas;
 export function getTypedProps<T extends ComponentType>(
 	node: UINode & { type: T }
 ): z.infer<Schemas[T]> | null {
-	const schema = componentSchemas[node.type];
-	const result = schema.safeParse(node.props);
+	const result = (componentSchemas[node.type] as z.ZodTypeAny).safeParse(node.props);
 	if (!result.success) {
 		console.error(
 			`[Props Validation Error] For node ${node.id} (type: ${node.type}):`,

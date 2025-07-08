@@ -17,6 +17,7 @@ import FormLinkAccessory from '$lib/components/nodes/form/LinkAccessory.svelte';
 import AccessoryDropdown from '$lib/components/nodes/shared/AccessoryDropdown.svelte';
 import DropdownItem from '$lib/components/nodes/shared/DropdownItem.svelte';
 import DropdownSection from '$lib/components/nodes/shared/DropdownSection.svelte';
+import GridEmptyView from '$lib/components/nodes/GridEmptyView.svelte';
 
 export const componentMap = new Map<
 	string,
@@ -36,6 +37,7 @@ export const componentMap = new Map<
 	['Grid.Dropdown', AccessoryDropdown],
 	['Grid.Dropdown.Section', DropdownSection],
 	['Grid.Dropdown.Item', DropdownItem],
+	['Grid.EmptyView', GridEmptyView],
 	['List.Dropdown', AccessoryDropdown],
 	['List.Dropdown.Item', DropdownItem],
 	['List.Dropdown.Section', DropdownSection],
