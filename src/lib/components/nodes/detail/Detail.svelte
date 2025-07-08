@@ -42,7 +42,7 @@
 
 		{#if metadataNodeId}
 			<aside
-				class="overflow-y-auto bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+				class="overflow-y-auto p-4"
 				class:w-72={layout === 'horizontal'}
 				class:border-l={layout === 'horizontal'}
 				class:border-t={layout === 'vertical'}

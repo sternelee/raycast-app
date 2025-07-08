@@ -29,7 +29,7 @@
 				e.preventDefault();
 				openUrl(componentProps.target);
 			}}
-			class="group flex h-auto justify-between !p-0"
+			class="group text-foreground flex h-auto justify-between !p-0"
 			variant="link"
 		>
 			{componentProps.text}
