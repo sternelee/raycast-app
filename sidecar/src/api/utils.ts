@@ -12,31 +12,33 @@ export const createLocalStorage = () => {
 };
 
 export const createWrapperComponent = (name: string) => {
-	const Component = React.forwardRef(
-		({ children, ...rest }: { children?: React.ReactNode }, ref) => {
-			return jsx(name as ElementType, { ...rest, children, ref });
-		}
-	);
-	Component.displayName = name;
-	return Component;
+	const ComponentFactory = (props: { children?: React.ReactNode }) => {
+		return jsx(name as ElementType, props);
+	};
+	ComponentFactory.displayName = name;
+	return ComponentFactory;
 };
 
-export const createAccessorySlot = () => createWrapperComponent('_AccessorySlot');
-
 export const createSlottedComponent = (baseName: string, accessoryPropNames: string[]) => {
-	const _AccessorySlot = createAccessorySlot();
-	const Primitive = createWrapperComponent(baseName);
-	const SlottedComponent = (props: { [key: string]: any; children?: React.ReactNode }) => {
+	const AccessorySlotFactory = createWrapperComponent('_AccessorySlot');
+	const PrimitiveFactory = createWrapperComponent(baseName);
+
+	const SlottedComponentFactory = (props: { [key: string]: any; children?: React.ReactNode }) => {
 		const { children, ...rest } = props;
 		const accessoryElements = [];
 		for (const name of accessoryPropNames) {
 			if (rest[name]) {
-				accessoryElements.push(jsx(_AccessorySlot, { name, children: rest[name] }));
+				accessoryElements.push(AccessorySlotFactory({ name, children: rest[name] }));
 				delete rest[name];
 			}
 		}
-		return jsx(Primitive, { ...rest, children: [children, ...accessoryElements].filter(Boolean) });
+		return PrimitiveFactory({
+			...rest,
+			children: [children, ...accessoryElements].filter(Boolean)
+		});
 	};
-	SlottedComponent.displayName = baseName;
-	return SlottedComponent;
+	SlottedComponentFactory.displayName = baseName;
+	return SlottedComponentFactory;
 };
+
+export const createAccessorySlot = () => createWrapperComponent('_AccessorySlot');
