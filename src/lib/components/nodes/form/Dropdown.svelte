@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { UINode } from '$lib/types';
 	import { useTypedNode } from '$lib/node.svelte';
-	import { tick, setContext, untrack, getContext } from 'svelte';
+	import { setContext, untrack, getContext } from 'svelte';
 	import { ChevronsUpDownIcon } from '@lucide/svelte';
 	import * as Command from '$lib/components/ui/command';
 	import * as Popover from '$lib/components/ui/popover';

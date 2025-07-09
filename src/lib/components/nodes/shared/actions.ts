@@ -1,15 +1,7 @@
-import type {
-	ActionCopyToClipboardProps,
-	ActionOpenInBrowserProps,
-	ActionProps,
-	componentSchemas,
-	ComponentType,
-	Schemas
-} from '$lib/props';
+import type { ActionCopyToClipboardProps, ActionOpenInBrowserProps, ActionProps } from '$lib/props';
 import type { UINode } from '$lib/types';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import z from 'zod/v4';
 
 export type ActionDefinition = ActionProps & { handler?: () => void; disabled?: boolean };
 

@@ -1,26 +1,19 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
 	import { type Extension, ExtensionSchema } from '$lib/store';
-	import Icon from './Icon.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import ExtensionListView from './extensions/ExtensionListView.svelte';
 	import ExtensionDetailView from './extensions/ExtensionDetailView.svelte';
 	import ImageLightbox from './extensions/ImageLightbox.svelte';
 	import CategoryFilter from './extensions/CategoryFilter.svelte';
 	import { extensionsStore } from './extensions/store.svelte';
-	import LoadingIndicator from './LoadingIndicator.svelte';
 	import type { VListHandle } from 'virtua/svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import { viewManager } from '$lib/viewManager.svelte';
 	import ExtensionInstallConfirm from './extensions/ExtensionInstallConfirm.svelte';
 	import { fetch } from '@tauri-apps/plugin-http';
 	import ActionBar from '$lib/components/nodes/shared/ActionBar.svelte';
-	import ActionMenu from '$lib/components/nodes/shared/ActionMenu.svelte';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import KeyboardShortcut from '$lib/components/KeyboardShortcut.svelte';
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-	import { keyEventMatches, type KeyboardShortcut as Shortcut } from '$lib/props/actions';
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';
 	import type { ActionDefinition } from './nodes/shared/actions';
@@ -157,11 +150,6 @@
 			extensionsStore.loadMore();
 		}
 	};
-
-	const openInBrowserShortcut: Shortcut = { modifiers: ['opt', 'ctrl'], key: 'o' };
-	const copyUrlShortcut: Shortcut = { modifiers: ['ctrl'], key: '.' };
-	const viewReadmeShortcut: Shortcut = { modifiers: ['opt', 'shift', 'ctrl'], key: 'r' };
-	const viewSourceShortcut: Shortcut = { modifiers: ['shift', 'ctrl'], key: 'o' };
 
 	function handleOpenInBrowser() {
 		if (!selectedListExtension) return;

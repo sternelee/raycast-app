@@ -1,17 +1,12 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
 	import { tick, untrack } from 'svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Trash, Loader2, Folder, File, Copy, ArrowUpRight, Eye } from '@lucide/svelte';
+	import { Loader2, Folder, File } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-	import { Kbd } from './ui/kbd';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import ActionBar from './nodes/shared/ActionBar.svelte';
-	import ActionMenu from './nodes/shared/ActionMenu.svelte';
 	import BaseList from './BaseList.svelte';
 	import { open } from '@tauri-apps/plugin-shell';
-	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import { focusManager } from '$lib/focus.svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';

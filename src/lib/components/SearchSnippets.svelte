@@ -1,15 +1,10 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
-	import { onMount, tick, untrack } from 'svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Trash, Loader2 } from '@lucide/svelte';
+	import { onMount, untrack } from 'svelte';
+	import { Loader2 } from '@lucide/svelte';
 	import ListItemBase from './nodes/shared/ListItemBase.svelte';
-	import { Kbd } from './ui/kbd';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import ActionBar from './nodes/shared/ActionBar.svelte';
-	import ActionMenu from './nodes/shared/ActionMenu.svelte';
 	import BaseList from './BaseList.svelte';
-	import KeyboardShortcut from './KeyboardShortcut.svelte';
 	import HeaderInput from './HeaderInput.svelte';
 	import MainLayout from './layout/MainLayout.svelte';
 	import Header from './layout/Header.svelte';

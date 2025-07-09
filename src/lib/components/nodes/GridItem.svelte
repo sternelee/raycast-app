@@ -4,8 +4,6 @@
 	import { cn } from '$lib/utils';
 	import Icon from '../Icon.svelte';
 	import { mode } from 'mode-watcher';
-	import { currentMonitor } from '@tauri-apps/api/window';
-	import { TableOfContents } from '@lucide/svelte';
 
 	type Props = {
 		props: GridItemProps;

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
-	import { Kbd } from '$lib/components/ui/kbd';
 	import type { Snippet } from 'svelte';
 	import KeyboardShortcut from '$lib/components/KeyboardShortcut.svelte';
 	import { focusManager } from '$lib/focus.svelte';

@@ -1,14 +1,11 @@
 <script lang="ts">
 	import type { Extension, Command as ExtensionCommand } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowUpRight } from '@lucide/svelte';
 	import Icon from '../Icon.svelte';
 	import { openUrl } from '@tauri-apps/plugin-opener';
 	import { Separator } from '../ui/separator';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
 	import ActionBar from '$lib/components/nodes/shared/ActionBar.svelte';
-	import ActionMenu from '../nodes/shared/ActionMenu.svelte';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import aiIcon from '$lib/assets/stars-square-1616x16@2x.png';

@@ -2,19 +2,16 @@
 	import type { UINode } from '$lib/types';
 	import { useTypedNode } from '$lib/node.svelte';
 	import { getContext } from 'svelte';
-	import CheckIcon from '@lucide/svelte/icons/check';
 	import * as Command from '$lib/components/ui/command';
 	import Icon from '$lib/components/Icon.svelte';
-	import { cn } from '$lib/utils';
 
 	type Props = {
 		nodeId: number;
 		uiTree: Map<number, UINode>;
 		onDispatch: (instanceId: number, handlerName: string, args: unknown[]) => void;
-		selectedValue?: string;
 	};
 
-	let { nodeId, uiTree, onDispatch, selectedValue }: Props = $props();
+	let { nodeId, uiTree, onDispatch }: Props = $props();
 
 	const { props: componentProps } = $derived.by(
 		useTypedNode(() => ({
@@ -28,12 +25,6 @@
 		onSelect: (value: string) => void;
 		displayValue: () => string | undefined;
 	}>('unified-dropdown');
-
-	const isSelected = $derived(
-		selectedValue
-			? selectedValue === componentProps?.value
-			: dropdownContext?.displayValue() === componentProps?.value
-	);
 </script>
 
 {#if componentProps && dropdownContext}
