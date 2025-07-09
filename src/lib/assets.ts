@@ -91,7 +91,10 @@ export function resolveIcon(
 			type: 'image',
 			src: src,
 			mask: icon.mask,
-			tintColor: icon.tintColor
+			tintColor:
+				typeof icon.tintColor === 'object' && icon.tintColor
+					? { adjustContrast: false, ...icon.tintColor }
+					: icon.tintColor
 		};
 	}
 

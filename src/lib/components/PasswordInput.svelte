@@ -5,16 +5,16 @@
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
 	type Props = {
-		value: string | undefined | null;
+		value?: string | undefined | null;
 	} & HTMLInputAttributes;
 
-	let { value, ...restProps }: Props = $props();
+	let { value = $bindable(), ...restProps }: Props = $props();
 	let showPassword = $state(false);
 	const inputType = $derived(showPassword ? 'text' : 'password');
 </script>
 
 <div class="relative">
-	<Input {...restProps} {value} type={inputType} files={undefined} class="pr-10" />
+	<Input {...restProps} bind:value type={inputType} files={undefined} class="pr-10" />
 	<Button
 		type="button"
 		variant="ghost"

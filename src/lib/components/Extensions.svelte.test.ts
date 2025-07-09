@@ -8,7 +8,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 if (typeof window !== 'undefined') {
 	window.HTMLElement.prototype.animate = () => ({
-		finished: Promise.resolve(),
+		finished: Promise.resolve({} as Animation),
 		cancel: () => {},
 		play: () => {},
 		pause: () => {},
@@ -23,12 +23,16 @@ if (typeof window !== 'undefined') {
 		playbackRate: 1,
 		pending: false,
 		playState: 'idle',
-		ready: Promise.resolve(),
+		ready: Promise.resolve({} as Animation),
 		onfinish: null,
 		oncancel: null,
 		onremove: null,
 		effect: null,
-		id: ''
+		id: '',
+		replaceState: 'active',
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		dispatchEvent: () => false
 	});
 }
 

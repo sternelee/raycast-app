@@ -46,7 +46,7 @@
 		if (componentProps && !isInitialized) {
 			const initial = componentProps.defaultValue ?? componentProps.value;
 			if (initial !== undefined) {
-				internalValue = initial;
+				internalValue = initial ?? undefined;
 			} else if (firstItemValue !== undefined) {
 				onDispatch(nodeId, 'onChange', [firstItemValue]);
 				if (!isControlled) {

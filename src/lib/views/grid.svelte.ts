@@ -55,7 +55,14 @@ export function useGridView(args: () => GridViewArgs) {
 
 		if (!root) return { allItems: items, emptyViewNodeId };
 
-		const defaultSectionProps = { ...gridProps, title: undefined, subtitle: undefined };
+		const defaultSectionProps = {
+			isLoading: false,
+			throttle: false,
+			columns: 6,
+			...gridProps,
+			title: undefined,
+			subtitle: undefined
+		};
 
 		const processSection = (sectionNode: UINode, sectionPropsOverride?: Partial<GridProps>) => {
 			const rawSectionProps = {
