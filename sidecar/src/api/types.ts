@@ -9,7 +9,7 @@ export const Toast = {
 		Failure: 'FAILURE',
 		Animated: 'ANIMATED'
 	}
-};
+} as const;
 
 export type Application = {
 	name: string;

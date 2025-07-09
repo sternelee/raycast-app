@@ -33,89 +33,6 @@ const createPluginRequire =
 		return require(moduleName);
 	};
 
-export const discoverPlugins = (): PluginInfo[] => {
-	const pluginsBaseDir = config.pluginsDir;
-	const plugins: PluginInfo[] = [];
-
-	try {
-		if (!fs.existsSync(pluginsBaseDir)) {
-			writeLog('Plugins directory does not exist, creating it...');
-			fs.mkdirSync(pluginsBaseDir, { recursive: true });
-			return [];
-		}
-
-		const pluginDirs = fs
-			.readdirSync(pluginsBaseDir, { withFileTypes: true })
-			.filter((dirent) => dirent.isDirectory())
-			.map((dirent) => dirent.name);
-
-		for (const pluginDirName of pluginDirs) {
-			const pluginDir = path.join(pluginsBaseDir, pluginDirName);
-			const packageJsonPath = path.join(pluginDir, 'package.json');
-
-			if (!fs.existsSync(packageJsonPath)) {
-				writeLog(`Plugin ${pluginDirName} has no package.json, skipping`);
-				continue;
-			}
-
-			try {
-				const packageJson: {
-					name?: string;
-					title?: string;
-					description?: string;
-					icon?: string;
-					author?: string | { name: string };
-					owner?: string;
-					commands?: Array<{
-						name: string;
-						title?: string;
-						description?: string;
-						icon?: string;
-						subtitle?: string;
-						mode?: 'view' | 'no-view';
-						preferences?: Preference[];
-					}>;
-					preferences?: Preference[];
-				} = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-
-				const commands = packageJson.commands || [];
-
-				for (const command of commands) {
-					const commandFilePath = path.join(pluginDir, `${command.name}.js`);
-
-					if (fs.existsSync(commandFilePath)) {
-						plugins.push({
-							title: command.title || command.name,
-							description:
-								command.description || packageJson.description || `${command.name} command`,
-							pluginTitle: packageJson.title || pluginDirName,
-							pluginName: packageJson.name || pluginDirName,
-							commandName: command.name,
-							pluginPath: commandFilePath,
-							icon: command.icon || packageJson.icon,
-							preferences: packageJson.preferences,
-							commandPreferences: command.preferences,
-							mode: command.mode,
-							author: packageJson.author,
-							owner: packageJson.owner
-						});
-					} else {
-						writeLog(`Command file ${commandFilePath} not found for command ${command.name}`);
-					}
-				}
-			} catch (error) {
-				writeLog(`Error parsing package.json for plugin ${pluginDirName}: ${error}`);
-			}
-		}
-
-		writeLog(`Discovered ${plugins.length} commands from ${pluginDirs.length} plugins`);
-		return plugins;
-	} catch (error) {
-		writeLog(`Error discovering plugins: ${error}`);
-		return [];
-	}
-};
-
 export const loadPlugin = (pluginPath: string): string => {
 	try {
 		if (!fs.existsSync(pluginPath)) {
@@ -231,12 +148,4 @@ export const runPlugin = (
 			writeLog('Initial render complete');
 		});
 	}
-};
-
-export const sendPluginList = (): void => {
-	const plugins = discoverPlugins();
-	writeOutput({
-		type: 'plugin-list',
-		payload: plugins
-	});
 };

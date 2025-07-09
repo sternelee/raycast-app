@@ -2,6 +2,7 @@ use std::fs;
 use std::io::{self, Cursor, Read};
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
 use tauri::Manager;
 use zip::result::ZipError;
 use zip::ZipArchive;
@@ -238,6 +239,172 @@ fn extract_archive(archive_data: &bytes::Bytes, target_dir: &Path) -> Result<(),
         }
     }
     Ok(())
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum Author {
+    Simple(String),
+    Detailed { name: String },
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PreferenceData {
+    pub title: String,
+    pub value: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Preference {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub required: Option<bool>,
+    #[serde(default)]
+    pub default: serde_json::Value,
+    pub data: Option<Vec<PreferenceData>>,
+    pub label: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+struct CommandInfo {
+    name: String,
+    title: Option<String>,
+    description: Option<String>,
+    icon: Option<String>,
+    subtitle: Option<String>,
+    mode: Option<String>,
+    preferences: Option<Vec<Preference>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+struct PackageJson {
+    name: Option<String>,
+    title: Option<String>,
+    description: Option<String>,
+    icon: Option<String>,
+    author: Option<Author>,
+    owner: Option<String>,
+    commands: Option<Vec<CommandInfo>>,
+    preferences: Option<Vec<Preference>>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PluginInfo {
+    pub title: String,
+    pub description: Option<String>,
+    pub plugin_title: String,
+    pub plugin_name: String,
+    pub command_name: String,
+    pub plugin_path: String,
+    pub icon: Option<String>,
+    pub preferences: Option<Vec<Preference>>,
+    pub command_preferences: Option<Vec<Preference>>,
+    pub mode: Option<String>,
+    pub author: Option<Author>,
+    pub owner: Option<String>,
+}
+
+pub fn discover_plugins(app: &tauri::AppHandle) -> Result<Vec<PluginInfo>, String> {
+    let plugins_base_dir = get_extension_dir(app, "")?;
+    let mut plugins = Vec::new();
+
+    if !plugins_base_dir.exists() {
+        fs::create_dir_all(&plugins_base_dir)
+            .map_err(|e| format!("Failed to create plugins directory: {}", e))?;
+        return Ok(plugins);
+    }
+
+    let plugin_dirs = fs::read_dir(plugins_base_dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.path().is_dir());
+
+    for plugin_dir_entry in plugin_dirs {
+        let plugin_dir = plugin_dir_entry.path();
+        let plugin_dir_name = plugin_dir
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or_default()
+            .to_string();
+        let package_json_path = plugin_dir.join("package.json");
+
+        if !package_json_path.exists() {
+            eprintln!("Plugin {} has no package.json, skipping", plugin_dir_name);
+            continue;
+        }
+
+        let package_json_content = match fs::read_to_string(&package_json_path) {
+            Ok(content) => content,
+            Err(e) => {
+                eprintln!(
+                    "Error reading package.json for plugin {}: {}",
+                    plugin_dir_name, e
+                );
+                continue;
+            }
+        };
+
+        let package_json: PackageJson = match serde_json::from_str(&package_json_content) {
+            Ok(json) => json,
+            Err(e) => {
+                eprintln!(
+                    "Error parsing package.json for plugin {}: {}",
+                    plugin_dir_name, e
+                );
+                continue;
+            }
+        };
+
+        if let Some(commands) = package_json.commands {
+            for command in commands {
+                let command_file_path = plugin_dir.join(format!("{}.js", command.name));
+                if command_file_path.exists() {
+                    let plugin_info = PluginInfo {
+                        title: command
+                            .title
+                            .clone()
+                            .unwrap_or_else(|| command.name.clone()),
+                        description: command
+                            .description
+                            .or_else(|| package_json.description.clone()),
+                        plugin_title: package_json
+                            .title
+                            .clone()
+                            .unwrap_or_else(|| plugin_dir_name.clone()),
+                        plugin_name: package_json
+                            .name
+                            .clone()
+                            .unwrap_or_else(|| plugin_dir_name.clone()),
+                        command_name: command.name.clone(),
+                        plugin_path: command_file_path.to_string_lossy().to_string(),
+                        icon: command.icon.or_else(|| package_json.icon.clone()),
+                        preferences: package_json.preferences.clone(),
+                        command_preferences: command.preferences,
+                        mode: command.mode,
+                        author: package_json.author.clone(),
+                        owner: package_json.owner.clone(),
+                    };
+                    plugins.push(plugin_info);
+                } else {
+                    eprintln!(
+                        "Command file {} not found for command {}",
+                        command_file_path.display(),
+                        command.name
+                    );
+                }
+            }
+        }
+    }
+
+    Ok(plugins)
 }
 
 #[tauri::command]

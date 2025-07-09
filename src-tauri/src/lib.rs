@@ -141,6 +141,11 @@ fn get_hidden_item_ids(app: tauri::AppHandle) -> Result<Vec<String>, String> {
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn get_discovered_plugins(app: tauri::AppHandle) -> Result<Vec<extensions::PluginInfo>, String> {
+    extensions::discover_plugins(&app)
+}
+
 fn setup_background_refresh() {
     thread::spawn(|| {
         thread::sleep(Duration::from_secs(60));
@@ -236,6 +241,7 @@ pub fn run() {
             launch_app,
             get_selected_text,
             show_hud,
+            get_discovered_plugins,
             filesystem::get_selected_finder_items,
             extensions::install_extension,
             browser_extension::browser_extension_check_connection,

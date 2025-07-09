@@ -58,7 +58,6 @@ class SidecarService {
 			this.#sidecarChild = await command.spawn();
 			this.#log(`Sidecar spawned with PID: ${this.#sidecarChild.pid}`);
 
-			this.requestPluginList();
 			this.#setupAiEventListeners();
 
 			this.#browserExtensionConnectionInterval = setInterval(async () => {
@@ -118,10 +117,6 @@ class SidecarService {
 		}
 		const message = JSON.stringify({ action, payload });
 		this.#sidecarChild.write(message + '\n');
-	};
-
-	requestPluginList = () => {
-		this.dispatchEvent('request-plugin-list');
 	};
 
 	getPreferences = (pluginName: string) => {
@@ -302,11 +297,6 @@ class SidecarService {
 				}
 				return;
 			}
-		}
-
-		if (typedMessage.type === 'plugin-list') {
-			uiStore.setPluginList(typedMessage.payload);
-			return;
 		}
 
 		if (typedMessage.type === 'preference-values') {

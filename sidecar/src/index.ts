@@ -1,6 +1,6 @@
 import { createInterface } from 'readline';
 import { writeLog, writeOutput } from './io';
-import { runPlugin, sendPluginList } from './plugin';
+import { runPlugin } from './plugin';
 import { instances, navigationStack, toasts, browserExtensionState } from './state';
 import { batchedUpdates, updateContainer } from './reconciler';
 import { preferencesStore } from './preferences';
@@ -62,9 +62,6 @@ rl.on('line', (line) => {
 			}
 
 			switch (command.action) {
-				case 'request-plugin-list':
-					sendPluginList();
-					break;
 				case 'run-plugin': {
 					const { pluginPath, mode, aiAccessStatus } = command.payload as {
 						pluginPath?: string;
@@ -177,4 +174,3 @@ rl.on('line', (line) => {
 });
 
 writeLog('Node.js Sidecar started successfully with React Reconciler.');
-sendPluginList();

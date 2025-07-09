@@ -24,6 +24,7 @@
 	import snippetIcon from '$lib/assets/snippets-package-1616x16@2x.png?inline';
 	import storeCommandIcon from '$lib/assets/command-store-1616x16@2x.png?inline';
 	import quicklinkIcon from '$lib/assets/quicklinks-package-1616x16@2x.png?inline';
+	import { invoke } from '@tauri-apps/api/core';
 
 	const storePlugin: PluginInfo = {
 		title: 'Store',
@@ -141,6 +142,14 @@
 		sidecarService.setOnGoBackToPluginList(viewManager.showCommandPalette);
 		sidecarService.start();
 
+		invoke<PluginInfo[]>('get_discovered_plugins')
+			.then((plugins) => {
+				uiStore.setPluginList(plugins);
+			})
+			.catch((e) => {
+				console.error('Failed to discover plugins:', e);
+			});
+
 		const unlisten = listen<string>('deep-link', (event) => {
 			console.log('Received deep link:', event.payload);
 			viewManager.handleDeepLink(event.payload, allPlugins);
@@ -202,7 +211,13 @@
 	}
 
 	function onExtensionInstalled() {
-		sidecarService.requestPluginList();
+		invoke<PluginInfo[]>('get_discovered_plugins')
+			.then((plugins) => {
+				uiStore.setPluginList(plugins);
+			})
+			.catch((e) => {
+				console.error('Failed to discover plugins:', e);
+			});
 	}
 </script>
 
