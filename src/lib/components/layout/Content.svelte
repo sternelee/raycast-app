@@ -29,9 +29,9 @@
 	<div class="h-full overflow-y-auto">
 		{#if rootNode}
 			{#if rootNode.type === 'List'}
-				<List nodeId={rootNode.id} {uiTree} {onDispatch} {onSelect} {searchText} />
+				<List nodeId={rootNode.id} {uiTree} {onSelect} {searchText} />
 			{:else if rootNode.type === 'Grid'}
-				<Grid nodeId={rootNode.id} {uiTree} {onSelect} {searchText} />
+				<Grid nodeId={rootNode.id} {uiTree} {onDispatch} {onSelect} {searchText} />
 			{:else if rootNode.type === 'Detail'}
 				<Detail nodeId={rootNode.id} {uiTree} {onDispatch} />
 			{:else}

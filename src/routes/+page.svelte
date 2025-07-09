@@ -198,10 +198,6 @@
 		sidecarService.getPreferences(pluginName);
 	}
 
-	function handleDispatch(instanceId: number, handlerName: string, args: unknown[]) {
-		sidecarService.dispatchEvent('dispatch-event', { instanceId, handlerName, args });
-	}
-
 	function handlePopView() {
 		sidecarService.dispatchEvent('pop-view');
 	}
@@ -257,11 +253,7 @@
 	<Extensions onBack={viewManager.showCommandPalette} onInstall={onExtensionInstalled} />
 {:else if currentView === 'plugin-running'}
 	{#key uiStore.currentRunningPlugin?.pluginPath}
-		<PluginRunner
-			onDispatch={handleDispatch}
-			onPopView={handlePopView}
-			onToastAction={handleToastAction}
-		/>
+		<PluginRunner onPopView={handlePopView} onToastAction={handleToastAction} />
 	{/key}
 {:else if currentView === 'clipboard-history'}
 	<ClipboardHistoryView onBack={viewManager.showCommandPalette} />
