@@ -3,6 +3,9 @@
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import { cn } from '$lib/utils';
 	import Icon from '../Icon.svelte';
+	import { mode } from 'mode-watcher';
+	import { currentMonitor } from '@tauri-apps/api/window';
+	import { TableOfContents } from '@lucide/svelte';
 
 	type Props = {
 		props: GridItemProps;
@@ -52,7 +55,21 @@
 		style:aspect-ratio={aspectRatio ?? '1'}
 		title={tooltip}
 	>
-		<Icon icon={content} class="size-full" style="object-fit: {fit ?? 'contain'}" />
+		{#if typeof content === 'object' && 'color' in content}
+			{@const color =
+				typeof content.color === 'object'
+					? mode.current === 'dark'
+						? content.color.dark
+						: content.color.light
+					: content.color}
+
+			<div class="h-full w-full" style:background-color={color}></div>
+		{:else}
+			<Icon
+				icon={content}
+				class="size-full {fit === 'contain' ? 'object-contain' : 'object-fill'}"
+			/>
+		{/if}
 	</div>
 
 	{#if props.title}
