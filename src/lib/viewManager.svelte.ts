@@ -1,4 +1,4 @@
-import type { PluginInfo } from '@raycast-linux/protocol';
+import type { ImageLike, PluginInfo } from '@raycast-linux/protocol';
 import { uiStore } from '$lib/ui.svelte';
 import { sidecarService } from '$lib/sidecar.svelte';
 import type { Quicklink } from './quicklinks.svelte';
@@ -22,7 +22,7 @@ export type ViewState =
 type OauthState = {
 	url: string;
 	providerName: string;
-	providerIcon?: string;
+	providerIcon?: ImageLike;
 	description?: string;
 } | null;
 

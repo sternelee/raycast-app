@@ -1,11 +1,8 @@
 import type { UINode } from '$lib/types';
-import { getTypedProps, type ListDropdownItemProps } from '$lib/props';
+import { getTypedProps, type DropdownItemProps } from '$lib/props';
 
-export function getDropdownItems(
-	node: UINode,
-	uiTree: Map<number, UINode>
-): ListDropdownItemProps[] {
-	const items: ListDropdownItemProps[] = [];
+export function getDropdownItems(node: UINode, uiTree: Map<number, UINode>): DropdownItemProps[] {
+	const items: DropdownItemProps[] = [];
 	if (!node) return items;
 
 	function traverse(children: number[]) {

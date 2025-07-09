@@ -2,6 +2,7 @@ import { type ImageLike } from '@raycast-linux/protocol';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { mode } from 'mode-watcher';
 import path from 'path';
+import type { ColorLike } from './props';
 
 // this matches any emoji character (u flag = unicode, \p{Emoji} = any unicode emoji)
 const EMOJI_REGEX = /\p{Emoji}/u;
@@ -17,16 +18,15 @@ const iconIsEmoji = (icon: string) => {
 	return Array.from(graphemes).length === 1 && EMOJI_REGEX.test(icon);
 };
 
-type ImageColor = string | { light: string; dark: string };
 type ImageMask = 'circle' | 'roundedRectangle';
 
 export type ResolvedIcon =
-	| { type: 'raycast'; name: string; tintColor?: ImageColor }
+	| { type: 'raycast'; name: string; tintColor?: ColorLike }
 	| {
 			type: 'image';
 			src: string;
 			mask?: ImageMask;
-			tintColor?: ImageColor;
+			tintColor?: ColorLike;
 	  }
 	| { type: 'emoji'; emoji: string };
 
@@ -67,7 +67,15 @@ export function resolveIcon(
 
 		// TODO: better heuristic?
 		if (source.endsWith('-16')) {
-			return { type: 'raycast', name: source, tintColor: icon.tintColor };
+			return {
+				type: 'raycast',
+				name: source,
+				tintColor:
+					// TODO: actually handle adjustContrast
+					typeof icon.tintColor === 'object'
+						? { ...icon.tintColor, adjustContrast: false }
+						: icon.tintColor
+			};
 		}
 
 		let src: string;

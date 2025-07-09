@@ -18,12 +18,14 @@ export const nodeToActionDefinition = (
 	node: UINode,
 	onDispatch: (instanceId: number, handlerName: string, args: unknown[]) => void
 ): ActionDefinition => {
+	const title = typeof node.props.title === 'string' ? node.props.title : undefined;
+
 	switch (node.type) {
 		case 'Action.CopyToClipboard': {
 			const copyProps = node.props as ActionCopyToClipboardProps;
 
 			return {
-				title: copyProps.title ?? 'Copy to Clipboard',
+				title: title ?? 'Copy to Clipboard',
 				handler: () => {
 					writeText(copyProps.content);
 					onDispatch(node.id, 'onCopy', []);
@@ -43,7 +45,7 @@ export const nodeToActionDefinition = (
 		}
 		case 'Action.SubmitForm': {
 			return {
-				title: node.props.title ?? 'Submit Form',
+				title: title ?? 'Submit Form',
 				handler: () => onDispatch(node.id, 'onSubmit', [])
 			};
 		}
@@ -51,7 +53,7 @@ export const nodeToActionDefinition = (
 		case 'Action':
 		default: {
 			return {
-				title: node.props.title,
+				title: title!,
 				handler: () => onDispatch(node.id, 'onAction', [])
 			};
 		}

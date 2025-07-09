@@ -14,7 +14,7 @@
 </script>
 
 <div class="relative">
-	<Input {...restProps} {value} type={inputType} class="pr-10" />
+	<Input {...restProps} {value} type={inputType} files={undefined} class="pr-10" />
 	<Button
 		type="button"
 		variant="ghost"

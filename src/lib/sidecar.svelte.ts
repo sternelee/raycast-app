@@ -1,7 +1,11 @@
 import { Command, type Child, open as shellOpen } from '@tauri-apps/plugin-shell';
 import { Unpackr } from 'msgpackr';
 import { uiStore } from '$lib/ui.svelte';
-import { CommandSchema, SidecarMessageWithPluginsSchema } from '@raycast-linux/protocol';
+import {
+	CommandSchema,
+	SidecarMessageWithPluginsSchema,
+	type ImageLike
+} from '@raycast-linux/protocol';
 import { invoke } from '@tauri-apps/api/core';
 import { appCacheDir, appLocalDataDir } from '@tauri-apps/api/path';
 import { listen } from '@tauri-apps/api/event';
@@ -11,7 +15,7 @@ import { inflate } from 'pako';
 type OauthState = {
 	url: string;
 	providerName: string;
-	providerIcon?: string;
+	providerIcon?: ImageLike;
 	description?: string;
 } | null;
 

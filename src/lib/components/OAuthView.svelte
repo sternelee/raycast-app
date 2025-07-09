@@ -3,10 +3,11 @@
 	import { Button } from '$lib/components/ui/button';
 	import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 	import Icon from './Icon.svelte';
+	import type { ImageLike } from '@raycast-linux/protocol';
 
 	type Props = {
 		providerName: string;
-		providerIcon?: string;
+		providerIcon?: ImageLike;
 		description?: string;
 		authUrl: string;
 		status: 'initial' | 'authorizing' | 'success' | 'error';
