@@ -37,7 +37,7 @@
 	const assetsPath = $derived(
 		currentRunningPlugin ? path.dirname(currentRunningPlugin.pluginPath) + '/assets' : ''
 	);
-	setContext('assetsPath', assetsPath);
+	setContext('assetsPath', () => assetsPath);
 	setContext('form-context', {
 		register: (fieldId: string, value: unknown) => {
 			formValues.set(fieldId, value);

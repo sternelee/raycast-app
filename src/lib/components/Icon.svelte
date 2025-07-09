@@ -13,8 +13,12 @@
 	};
 	let { icon, class: className, assetsPath: propAssetsPath }: Props = $props();
 
-	const assetsPath = $derived(
-		propAssetsPath ?? (hasContext('assetsPath') ? getContext<string>('assetsPath') : '')
+	const assetsPath = $derived.by(
+		propAssetsPath
+			? () => propAssetsPath
+			: hasContext('assetsPath')
+				? getContext<() => string>('assetsPath')
+				: () => ''
 	);
 	const iconInfo = $derived(resolveIcon(icon, assetsPath));
 
