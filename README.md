@@ -1,6 +1,6 @@
-# Raycast Linux
+# Raycast for Linux
 
-An open-source, Raycast-inspired launcher for the Linux desktop. This project is a hobbyist's effort to bring the high-speed, extensible productivity interface of Raycast to the Linux ecosystem, built with a modern tech stack.
+An open-source, Raycast-inspired launcher for Linux.
 
 ![GIF of Raycast Linux, showing off its main features](https://raw.githubusercontent.com/ByteAtATime/raycast-linux/main/images/raycast-linux.gif)
 
