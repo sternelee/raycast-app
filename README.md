@@ -71,7 +71,7 @@ To get the project running locally, you'll need to set up the development enviro
 This project stands on the shoulders of giants:
 
 - A huge thank you to the team behind the original **[Raycast](https://raycast.com)**.
-- The powerful calculator is powered by **[SoulverCore](https://github.com/soulver/SoulverCore)** by Acqualia. Special thanks to Zac for getting me a Linux build -- on his vacation, no less!
+- The powerful calculator is powered by **[SoulverCore](https://github.com/soulverteam/SoulverCore)** by Acqualia. Special thanks to Zac for getting me a Linux build -- on his vacation, no less!
 
 ## 📜 License
 
