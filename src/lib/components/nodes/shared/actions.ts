@@ -18,6 +18,7 @@ export const nodeToActionDefinition = (
 
 			return {
 				title: title ?? 'Copy to Clipboard',
+				...copyProps,
 				handler: () => {
 					writeText(copyProps.content);
 					onDispatch(node.id, 'onCopy', []);
@@ -29,6 +30,7 @@ export const nodeToActionDefinition = (
 
 			return {
 				title: 'Open in Browser',
+				...openProps,
 				handler: () => {
 					openUrl(openProps.url);
 					onDispatch(node.id, 'onOpenInBrowser', []);
@@ -38,6 +40,7 @@ export const nodeToActionDefinition = (
 		case 'Action.SubmitForm': {
 			return {
 				title: title ?? 'Submit Form',
+				...node.props,
 				handler: () => onDispatch(node.id, 'onSubmit', [])
 			};
 		}
@@ -46,6 +49,7 @@ export const nodeToActionDefinition = (
 		default: {
 			return {
 				title: title!,
+				...node.props,
 				handler: () => onDispatch(node.id, 'onAction', [])
 			};
 		}
