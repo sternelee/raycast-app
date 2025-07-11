@@ -12,8 +12,8 @@
 	type Props = {
 		violations: Violation[];
 		open: boolean;
-		onconfirm: () => {};
-		oncancel: () => {};
+		onconfirm: () => void;
+		oncancel: () => void;
 	};
 
 	let { violations, open = $bindable(), onconfirm, oncancel }: Props = $props();
