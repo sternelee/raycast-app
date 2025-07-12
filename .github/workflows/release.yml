@@ -1,0 +1,69 @@
+name: 'Publish Raycast Linux'
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish-linux-appimage:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Copy Swift files
+        run: |
+          cp /usr/share/swift/usr/lib/swift/linux/*.so src-tauri/SoulverWrapper/Vendor/SoulverCore-linux
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'pnpm'
+          cache-dependency-path: ./pnpm-lock.yaml
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install project dependencies
+        run: pnpm install
+
+      - name: Build the sidecar binary
+        run: pnpm --filter sidecar build
+
+      - name: Build Swift wrapper
+        run: swift build -c release --package-path src-tauri/SoulverWrapper
+
+      - name: Build and Publish AppImage
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          LD_LIBRARY_PATH: ${{ github.workspace }}/src-tauri/SoulverWrapper/.build/release:${{ github.workspace }}/src-tauri/SoulverWrapper/Vendor/SoulverCore-linux
+        with:
+          tagName: 'v__VERSION__'
+          releaseName: 'Raycast Linux v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
+          args: '--verbose --bundles appimage'
+          projectPath: './'

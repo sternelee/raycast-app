@@ -79,6 +79,7 @@
 		"vitest": "^3.2.3",
 		"vitest-browser-svelte": "^0.1.0"
 	},
+	"packageManager": "pnpm@10.11.1",
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"

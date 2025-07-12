@@ -2,22 +2,18 @@ use std::process::Command;
 
 fn main() {
     // dont touch this file - it works and i have no idea why
-    let status = Command::new("swift")
-        .arg("build")
-        .arg("-c")
-        .arg("release")
-        .arg("--package-path")
-        .arg("SoulverWrapper")
-        .arg("-Xlinker")
-        .arg("-rpath")
-        .arg("-Xlinker")
-        .arg("$ORIGIN/../../Vendor/SoulverCore-linux")
-        .status()
-        .expect("Failed to execute swift build command");
+    // let status = Command::new("swift")
+    //     .arg("build")
+    //     .arg("-c")
+    //     .arg("release")
+    //     .arg("--package-path")
+    //     .arg("SoulverWrapper")
+    //     .status()
+    //     .expect("Failed to execute swift build command");
 
-    if !status.success() {
-        panic!("Swift build failed");
-    }
+    // if !status.success() {
+    //     panic!("Swift build failed");
+    // }
 
     let _ = Command::new("patchelf")
         .arg("--set-rpath")

@@ -5,7 +5,7 @@
 	"main": "index.ts",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node && pkg dist/index.js --output app --public && pnpm rename",
+		"build": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node && pkg dist/index.js --output app --public --sea && pnpm rename",
 		"rename": "mkdir -p ../src-tauri/binaries && mv \"app$([[ \"$OSTYPE\" =~ msys|win32 ]] && echo .exe)\" \"../src-tauri/binaries/app-$(rustc -vV | awk '/host:/ {print $2}')$([[ \"$OSTYPE\" =~ msys|win32 ]] && echo .exe)\"",
 		"check": "tsc --noEmit"
 	},

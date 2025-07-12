@@ -26,7 +26,7 @@ let package = Package(
                 .linkedLibrary("SoulverCoreDynamic"),
                 .unsafeFlags([
                     "-L", "Vendor/SoulverCore-linux",
-                    "-Xlinker", "-rpath", "-Xlinker", "$ORIGIN"
+                    "-Xlinker", "-rpath", "-Xlinker", "$ORIGIN/../../../Vendor/SoulverCore-linux"
                 ])
             ]
         ),
