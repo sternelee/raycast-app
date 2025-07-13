@@ -17,7 +17,7 @@ mod soulver;
 mod store;
 mod system;
 
-use crate::snippets::input_manager::{EvdevInputManager, InputManager};
+use crate::snippets::input_manager::{EvdevInputManager, InputManager, RdevInputManager};
 use crate::{app::App, cache::AppCache};
 use ai::AiUsageManager;
 use browser_extension::WsState;
@@ -192,16 +192,34 @@ fn setup_input_listener(app: &tauri::AppHandle) {
     let snippet_manager = app.state::<SnippetManager>().inner().clone();
     let snippet_manager_arc = Arc::new(snippet_manager);
 
-    let input_manager = EvdevInputManager::new().unwrap();
-    let input_manager_arc: Arc<dyn InputManager> = Arc::new(input_manager);
-    app.manage(input_manager_arc.clone());
+    let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
 
-    let engine = ExpansionEngine::new(snippet_manager_arc, input_manager_arc);
-    thread::spawn(move || {
-        if let Err(e) = engine.start_listening() {
-            eprintln!("[ExpansionEngine] Failed to start: {}", e);
+    let input_manager_result: Result<Arc<dyn InputManager>, anyhow::Error> = if is_wayland {
+        println!("[Snippets] Wayland detected, using evdev for snippet expansion.");
+        EvdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+    } else {
+        println!("[Snippets] X11 or unknown session, using rdev for snippet expansion.");
+        RdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+    };
+
+    match input_manager_result {
+        Ok(input_manager) => {
+            app.manage(input_manager.clone());
+
+            let engine = ExpansionEngine::new(snippet_manager_arc, input_manager);
+            thread::spawn(move || {
+                if let Err(e) = engine.start_listening() {
+                    eprintln!("[ExpansionEngine] Failed to start: {}", e);
+                }
+            });
         }
-    });
+        Err(e) => {
+            eprintln!(
+                "[Snippets] Failed to initialize input manager: {}. Snippet expansion will be disabled.",
+                e
+            );
+        }
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

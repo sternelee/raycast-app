@@ -75,10 +75,13 @@ pub struct RdevInputManager {
 }
 
 impl RdevInputManager {
-    pub fn new() -> Self {
-        Self {
-            enigo: Mutex::new(Enigo::new(&enigo::Settings::default()).unwrap()),
-        }
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            enigo: Mutex::new(
+                Enigo::new(&enigo::Settings::default())
+                    .context("Failed to initialize enigo for rdev manager")?,
+            ),
+        })
     }
 }
 
