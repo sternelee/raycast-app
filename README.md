@@ -39,6 +39,14 @@ chmod +x <downloaded-file-name>.AppImage
 ./<downloaded-file-name>.AppImage
 ```
 
+This will open a long-running process in the background. To toggle the visibility of the window, simply run it again.
+
+Depending on your environment, you may be able to bind the script to a hotkey. For example, on Hyprland:
+
+```
+bind = ALT, Space, exec, /path/to/raycast-linux.AppImage
+```
+
 ### System Requirements
 
 The application requires `glibc` version **2.38**, which is installed by default on Ubuntu 24.04, Fedora 40, and recent versions of Arch Linux.
