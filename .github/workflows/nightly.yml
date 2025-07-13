@@ -1,9 +1,8 @@
 name: 'Publish Raycast Linux'
 
 on:
-  push:
-    tags:
-      - 'v*'
+  schedule:
+    - cron: '15 23 * * *'
   workflow_dispatch:
 
 jobs:
@@ -65,5 +64,12 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
           prerelease: false
-          args: '--verbose --bundles appimage'
+          args: '--verbose --debug --bundles appimage'
           projectPath: './'
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: raycast-linux
+          path: src-tauri/target/debug/bundle/appimage/*.AppImage
+          retention-days: 7
+          compression-level: 0
