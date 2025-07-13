@@ -64,6 +64,7 @@ notify = "6.1.1"
 notify-debouncer-full = "0.3.1"
 percent-encoding = "2.3.1"
 tauri-plugin-os = "2"
+caps = "0.5.5"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"

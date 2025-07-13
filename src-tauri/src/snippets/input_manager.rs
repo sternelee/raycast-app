@@ -10,6 +10,8 @@ use std::thread;
 use std::time::Duration;
 
 #[cfg(target_os = "linux")]
+use crate::capabilities;
+#[cfg(target_os = "linux")]
 use evdev::{uinput::VirtualDevice, KeyCode};
 #[cfg(target_os = "linux")]
 use xkbcommon::xkb;
@@ -305,8 +307,22 @@ impl EvdevInputManager {
 #[cfg(target_os = "linux")]
 impl InputManager for EvdevInputManager {
     fn start_listening(&self, callback: Box<dyn Fn(InputEvent) + Send + Sync>) -> Result<()> {
-        let devices = evdev::enumerate()
-            .map(|t| t.1)
+        let has_granted_capabilities = if capabilities::linux::can_use_capability() {
+            capabilities::linux::grant_capability().is_ok()
+        } else {
+            false
+        };
+
+        let devices: Vec<_> = evdev::enumerate().map(|(_, device)| device).collect();
+
+        if has_granted_capabilities {
+            if let Err(e) = capabilities::linux::revoke_capability() {
+                eprintln!("[Warning] Could not revoke capabilities: {}", e);
+            }
+        }
+
+        let devices = devices
+            .into_iter()
             .filter(|d| {
                 d.supported_keys()
                     .map_or(false, |keys| keys.contains(evdev::KeyCode::KEY_ENTER))
