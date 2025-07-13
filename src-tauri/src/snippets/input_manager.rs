@@ -268,16 +268,28 @@ impl EvdevInputManager {
             attribute_set.insert(key);
         }
 
-        let uinput_device = evdev::uinput::VirtualDevice::builder()
+        let has_granted_capabilities = if capabilities::linux::can_use_capability() {
+            capabilities::linux::grant_capability().is_ok()
+        } else {
+            false
+        };
+
+        let uinput_device_result = evdev::uinput::VirtualDevice::builder()
             .context("Failed to get virtual device builder")?
             .name("Global Automata Text Injection")
             .with_keys(&attribute_set)
             .context("Failed to set keys for virtual device")?
             .build()
-            .context("Failed to build virtual device")?;
+            .context("Failed to build virtual device");
+
+        if has_granted_capabilities {
+            if let Err(e) = capabilities::linux::revoke_capability() {
+                eprintln!("[Warning] Could not revoke capabilities: {}", e);
+            }
+        }
 
         Ok(Self {
-            virtual_device: Mutex::new(uinput_device),
+            virtual_device: Mutex::new(uinput_device_result?),
         })
     }
 
