@@ -53,6 +53,8 @@ jobs:
 
       - name: Build AppImage
         run: pnpm tauri build --verbose --debug --bundles appimage
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/src-tauri/SoulverWrapper/.build/release:${{ github.workspace }}/src-tauri/SoulverWrapper/Vendor/SoulverCore-linux
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
