@@ -30,8 +30,10 @@
 				return;
 			}
 
-			event.preventDefault();
-			onPopView?.();
+			if (onPopView) {
+				event.preventDefault();
+				onPopView();
+			}
 		}
 	};
 </script>
