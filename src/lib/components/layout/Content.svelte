@@ -23,8 +23,8 @@
 </script>
 
 <div
-	class="grid grow overflow-y-auto"
-	style:grid-template-columns={isShowingDetail ? 'minmax(0, 1.5fr) minmax(0, 2.5fr)' : '1fr'}
+	class="grid w-full grow overflow-y-auto"
+	style:grid-template-columns={isShowingDetail ? '1fr 512px' : '1fr'}
 >
 	<div class="h-full overflow-y-auto">
 		{#if rootNode}

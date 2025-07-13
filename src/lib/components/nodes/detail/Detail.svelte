@@ -27,7 +27,7 @@
 		class:flex-col={layout === 'vertical'}
 	>
 		<main
-			class="w-[512px] shrink-0 flex-grow overflow-y-auto"
+			class="w-full overflow-y-auto"
 			class:p-6={layout === 'horizontal'}
 			class:p-4={layout === 'vertical'}
 		>
@@ -42,7 +42,7 @@
 
 		{#if metadataNodeId}
 			<aside
-				class="overflow-y-auto p-4"
+				class="shrink-0 overflow-y-auto p-4"
 				class:w-72={layout === 'horizontal'}
 				class:border-l={layout === 'horizontal'}
 				class:border-t={layout === 'vertical'}
