@@ -51,21 +51,9 @@ jobs:
       - name: Build Swift wrapper
         run: swift build -c release --package-path src-tauri/SoulverWrapper
 
-      - name: Build and Publish AppImage
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          LD_LIBRARY_PATH: ${{ github.workspace }}/src-tauri/SoulverWrapper/.build/release:${{ github.workspace }}/src-tauri/SoulverWrapper/Vendor/SoulverCore-linux
-        with:
-          tagName: 'v__VERSION__'
-          releaseName: 'Raycast Linux v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
-          args: '--verbose --debug --bundles appimage'
-          projectPath: './'
+      - name: Build AppImage
+        run: pnpm tauri build --verbose --debug --bundles appimage
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
