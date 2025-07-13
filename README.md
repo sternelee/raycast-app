@@ -2,6 +2,8 @@
 
 An open-source, Raycast-inspired launcher for Linux.
 
+For more background on this project, I have a [post here](https://byteatatime.dev/posts/recreating-raycast).
+
 ![GIF of Raycast Linux, showing off its main features](https://raw.githubusercontent.com/ByteAtATime/raycast-linux/main/images/raycast-linux.gif)
 
 **Disclaimer:** This is a hobby project and is **not** affiliated with, nor endorsed by, the official Raycast team.
@@ -26,15 +28,50 @@ While the goal is to support a wide range of Raycast extensions, there are some 
 2.  **Native Binaries**: Extensions that bundle pre-compiled binaries for macOS will not work. Similarly, extensions that use Swift to interact with the operating system won't work either.
 3.  **Assumed Permissions**: Extensions may assume they have access to macOS-specific permissioned data (like Contacts or Calendars) which have no direct equivalent.
 
-## 🚀 Getting Started
+## 🚀 Installation
 
-To get the project running locally, you'll need to set up the development environment.
+You can download the latest release from the [GitHub Releases page](https://github.com/ByteAtATime/raycast-linux/releases).
+
+Currently, only an `.AppImage` is provided. After downloading, make it executable:
+
+```bash
+chmod +x <downloaded-file-name>.AppImage
+./<downloaded-file-name>.AppImage
+```
+
+### System Requirements
+
+The application requires `glibc` version **2.38**, which is installed by default on Ubuntu 24.04, Fedora 40, and recent versions of Arch Linux.
+
+**Wayland users:** For the global snippet expansion feature to work, the application needs permission to read keyboard events. The recommended and most secure method is to add a `udev` rule.
+
+1. Create the `udev` rule file:
+
+   ```bash
+   sudo nano /etc/udev/rules.d/99-raycast-linux.rules
+   ```
+
+2. Add the following line to the file:
+   This rule grants the user at the physical console access to keyboard devices.
+
+   ```
+   KERNEL=="event*", ENV{ID_INPUT_KEYBOARD}=="1", TAG+="uaccess"
+   ```
+
+3. Reload the `udev` rules to apply the changes:
+   ```bash
+   sudo udevadm control --reload-rules && sudo udevadm trigger
+   ```
+
+## 🛠️ Building from Source
+
+If you prefer to build the project from its source code, you'll need to set up the development environment.
 
 ### Prerequisites
 
 - **Rust**: Install via `rustup`.
 - **Node.js**: Use a recent LTS version. `pnpm` is the package manager for this project (`npm i -g pnpm`).
-- **Tauri Prerequisites**: Follow the official [Tauri guide](https://v2.tauri.app/start/prerequisites/) to install system dependencies
+- **Tauri Prerequisites**: Follow the official [Tauri guide](https://v2.tauri.app/start/prerequisites/) to install system dependencies.
 - **Swift Toolchain**: The calculator feature uses a Swift wrapper around SoulverCore.
 
 ### Installation & Running
