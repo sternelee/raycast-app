@@ -2,7 +2,6 @@ mod ai;
 mod app;
 mod browser_extension;
 mod cache;
-mod capabilities;
 mod clipboard;
 pub mod clipboard_history;
 mod desktop;
