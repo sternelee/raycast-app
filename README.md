@@ -105,9 +105,18 @@ If you prefer to build the project from its source code, you'll need to set up t
     pnpm --filter sidecar build
     ```
 
-4.  **Run in development mode:**
-    This command will launch the Tauri application with hot-reloading for the frontend.
+4.  **Compile SoulverCore Wrapper:**
+    This step compiles the wrapper around SoulverCore into a shared object file.
+
     ```bash
+    swift build -c release --package-path src-tauri/SoulverWrapper
+    ```
+
+5.  **Run in development mode:**
+    This command will launch the Tauri application with hot-reloading for the frontend. Note that you may need to tweak `LD_LIBRARY_PATH` to point to the SoulverWrapper.
+
+    ```bash
+    export LD_LIBRARY_PATH="$(pwd)/src-tauri/SoulverWrapper/Vendor/SoulverCore-linux:$(pwd)/src-tauri/SoulverWrapper/.build/release"
     pnpm tauri dev
     ```
 
