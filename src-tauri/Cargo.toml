@@ -71,3 +71,13 @@ tauri-plugin-single-instance = "2"
 
 [dev-dependencies]
 tokio = { version = "^1.45.1", features = ["macros", "rt-multi-thread"] }
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s" # rust is not the bottleneck, we can optimize for size with a small performance hit
+panic = "abort"
+strip = true
