@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '15 23 * * *'
   workflow_dispatch:
+    inputs:
+      debug:
+        description: 'If set to true, a debug build will be created.'
+        required: true
+        default: false
+        type: boolean
 
 jobs:
   publish-linux-appimage:
@@ -42,6 +48,17 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: Determine Build Profile
+        id: build_profile
+        run: |
+          if [[ "${{ github.event.inputs.debug }}" == "true" ]]; then
+            echo "profile=debug" >> $GITHUB_OUTPUT
+            echo "artifact_suffix=-debug" >> $GITHUB_OUTPUT
+          else
+            echo "profile=release" >> $GITHUB_OUTPUT
+            echo "artifact_suffix=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install project dependencies
         run: pnpm install
 
@@ -52,14 +69,19 @@ jobs:
         run: swift build -c release --package-path src-tauri/SoulverWrapper
 
       - name: Build AppImage
-        run: pnpm tauri build --verbose --debug --bundles appimage
+        run: |
+          BUILD_ARGS="--verbose --bundles appimage"
+          if [[ "${{ steps.build_profile.outputs.profile }}" == "debug" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --debug"
+          fi
+          pnpm tauri build $BUILD_ARGS
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/src-tauri/SoulverWrapper/.build/release:${{ github.workspace }}/src-tauri/SoulverWrapper/Vendor/SoulverCore-linux
+          LD_LIBRARY_PATH: ${{ github.workspace }}/src-tauri/SoulverWrapper/.build/${{ steps.build_profile.outputs.profile }}:${{ github.workspace }}/src-tauri/SoulverWrapper/Vendor/SoulverCore-linux
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: raycast-linux
-          path: src-tauri/target/debug/bundle/appimage/*.AppImage
+          name: raycast-linux${{ steps.build_profile.outputs.artifact_suffix }}
+          path: src-tauri/target/${{ steps.build_profile.outputs.profile }}/bundle/appimage/*.AppImage
           retention-days: 7
           compression-level: 0
