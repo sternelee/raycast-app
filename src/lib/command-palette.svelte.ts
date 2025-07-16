@@ -71,6 +71,7 @@ export function useCommandPaletteItems({
 
 		(async () => {
 			try {
+				// TODO: Use the new API
 				const resultJson = await invoke<string>('calculate_soulver', { expression: term.trim() });
 
 				if (currentCalculationId !== calculationId) {

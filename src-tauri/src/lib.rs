@@ -13,11 +13,11 @@ mod frecency;
 mod oauth;
 mod quicklinks;
 mod snippets;
-mod soulver;
 mod store;
 mod system;
 
-use crate::snippets::input_manager::{EvdevInputManager, InputManager, RdevInputManager};
+// use crate::snippets::input_manager::{EvdevInputManager, InputManager, RdevInputManager};
+use crate::snippets::input_manager::{InputManager, RdevInputManager};
 use crate::{app::App, cache::AppCache};
 use ai::AiUsageManager;
 use browser_extension::WsState;
@@ -76,7 +76,7 @@ async fn show_hud(app: tauri::AppHandle, title: String) -> Result<(), String> {
         None => {
             tauri::WebviewWindowBuilder::new(&app, "hud", tauri::WebviewUrl::App("/hud".into()))
                 .decorations(false)
-                .transparent(true)
+                // .transparent(true)
                 .always_on_top(true)
                 .skip_taskbar(true)
                 .center()
@@ -188,39 +188,40 @@ fn setup_global_shortcut(app: &mut tauri::App) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-fn setup_input_listener(app: &tauri::AppHandle) {
-    let snippet_manager = app.state::<SnippetManager>().inner().clone();
-    let snippet_manager_arc = Arc::new(snippet_manager);
-
-    let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
-
-    let input_manager_result: Result<Arc<dyn InputManager>, anyhow::Error> = if is_wayland {
-        println!("[Snippets] Wayland detected, using evdev for snippet expansion.");
-        EvdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
-    } else {
-        println!("[Snippets] X11 or unknown session, using rdev for snippet expansion.");
-        RdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
-    };
-
-    match input_manager_result {
-        Ok(input_manager) => {
-            app.manage(input_manager.clone());
-
-            let engine = ExpansionEngine::new(snippet_manager_arc, input_manager);
-            thread::spawn(move || {
-                if let Err(e) = engine.start_listening() {
-                    eprintln!("[ExpansionEngine] Failed to start: {}", e);
-                }
-            });
-        }
-        Err(e) => {
-            eprintln!(
-                "[Snippets] Failed to initialize input manager: {}. Snippet expansion will be disabled.",
-                e
-            );
-        }
-    }
-}
+// fn setup_input_listener(app: &tauri::AppHandle) {
+//     let snippet_manager = app.state::<SnippetManager>().inner().clone();
+//     let snippet_manager_arc = Arc::new(snippet_manager);
+//
+//     let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+//
+//     let input_manager_result: Result<Arc<dyn InputManager>, anyhow::Error> = if is_wayland {
+//         println!("[Snippets] Wayland detected, using evdev for snippet expansion.");
+//         // TODO: only for linux
+//         // EvdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+//     } else {
+//         println!("[Snippets] X11 or unknown session, using rdev for snippet expansion.");
+//         RdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+//     };
+//
+//     match input_manager_result {
+//         Ok(input_manager) => {
+//             app.manage(input_manager.clone());
+//
+//             let engine = ExpansionEngine::new(snippet_manager_arc, input_manager);
+//             thread::spawn(move || {
+//                 if let Err(e) = engine.start_listening() {
+//                     eprintln!("[ExpansionEngine] Failed to start: {}", e);
+//                 }
+//             });
+//         }
+//         Err(e) => {
+//             eprintln!(
+//                 "[Snippets] Failed to initialize input manager: {}. Snippet expansion will be disabled.",
+//                 e
+//             );
+//         }
+//     }
+// }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -309,7 +310,6 @@ pub fn run() {
             ai::get_ai_settings,
             ai::set_ai_settings,
             ai::ai_can_access,
-            soulver::calculate_soulver
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -325,15 +325,8 @@ pub fn run() {
 
             setup_background_refresh();
             setup_global_shortcut(app)?;
-            setup_input_listener(app.handle());
-
-            let soulver_core_path = app
-                .path()
-                .resource_dir()
-                .unwrap()
-                .join("SoulverWrapper/Vendor/SoulverCore-linux");
-
-            soulver::initialize(soulver_core_path.to_str().unwrap());
+            // TODO: only for linux
+            // setup_input_listener(app.handle());
 
             Ok(())
         })
