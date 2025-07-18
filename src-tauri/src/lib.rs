@@ -16,8 +16,9 @@ mod snippets;
 mod store;
 mod system;
 
-// use crate::snippets::input_manager::{EvdevInputManager, InputManager, RdevInputManager};
-use crate::snippets::input_manager::{InputManager, RdevInputManager};
+#[cfg(not(target_os = "macos"))]
+use crate::snippets::input_manager::RdevInputManager;
+use crate::snippets::input_manager::{EvdevInputManager, InputManager};
 use crate::{app::App, cache::AppCache};
 use ai::AiUsageManager;
 use browser_extension::WsState;
@@ -188,40 +189,55 @@ fn setup_global_shortcut(app: &mut tauri::App) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-// fn setup_input_listener(app: &tauri::AppHandle) {
-//     let snippet_manager = app.state::<SnippetManager>().inner().clone();
-//     let snippet_manager_arc = Arc::new(snippet_manager);
-//
-//     let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
-//
-//     let input_manager_result: Result<Arc<dyn InputManager>, anyhow::Error> = if is_wayland {
-//         println!("[Snippets] Wayland detected, using evdev for snippet expansion.");
-//         // TODO: only for linux
-//         // EvdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
-//     } else {
-//         println!("[Snippets] X11 or unknown session, using rdev for snippet expansion.");
-//         RdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
-//     };
-//
-//     match input_manager_result {
-//         Ok(input_manager) => {
-//             app.manage(input_manager.clone());
-//
-//             let engine = ExpansionEngine::new(snippet_manager_arc, input_manager);
-//             thread::spawn(move || {
-//                 if let Err(e) = engine.start_listening() {
-//                     eprintln!("[ExpansionEngine] Failed to start: {}", e);
-//                 }
-//             });
-//         }
-//         Err(e) => {
-//             eprintln!(
-//                 "[Snippets] Failed to initialize input manager: {}. Snippet expansion will be disabled.",
-//                 e
-//             );
-//         }
-//     }
-// }
+fn setup_input_listener(app: &tauri::AppHandle) {
+    let snippet_manager = app.state::<SnippetManager>().inner().clone();
+    let snippet_manager_arc = Arc::new(snippet_manager);
+
+    #[cfg(target_os = "linux")]
+    let is_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+
+    let input_manager_result: Result<Arc<dyn InputManager>, anyhow::Error> = {
+        #[cfg(target_os = "macos")]
+        {
+            println!("[Snippets] macOS detected, using CoreGraphics for snippet expansion.");
+            EvdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+        }
+        #[cfg(target_os = "linux")]
+        {
+            if is_wayland {
+                println!("[Snippets] Wayland detected, using evdev for snippet expansion.");
+                EvdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+            } else {
+                println!("[Snippets] X11 detected, using rdev for snippet expansion.");
+                RdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+            }
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        {
+            println!("[Snippets] Unsupported platform, using rdev fallback for snippet expansion.");
+            RdevInputManager::new().map(|m| Arc::new(m) as Arc<dyn InputManager>)
+        }
+    };
+
+    match input_manager_result {
+        Ok(input_manager) => {
+            app.manage(input_manager.clone());
+
+            let engine = ExpansionEngine::new(snippet_manager_arc, input_manager);
+            thread::spawn(move || {
+                if let Err(e) = engine.start_listening() {
+                    eprintln!("[ExpansionEngine] Failed to start: {}", e);
+                }
+            });
+        }
+        Err(e) => {
+            eprintln!(
+                "[Snippets] Failed to initialize input manager: {}. Snippet expansion will be disabled.",
+                e
+            );
+        }
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -324,8 +340,7 @@ pub fn run() {
 
             setup_background_refresh();
             setup_global_shortcut(app)?;
-            // TODO: only for linux
-            // setup_input_listener(app.handle());
+            setup_input_listener(app.handle());
 
             Ok(())
         })

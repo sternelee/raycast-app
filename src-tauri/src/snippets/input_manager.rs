@@ -13,6 +13,10 @@ use std::time::Duration;
 use evdev::{uinput::VirtualDevice, KeyCode};
 #[cfg(target_os = "linux")]
 use xkbcommon::xkb;
+#[cfg(target_os = "macos")]
+use core_graphics::event::{CGEvent, CGEventTapLocation, CGKeyCode};
+#[cfg(target_os = "macos")]
+use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 
 #[derive(Debug, Clone)]
 pub enum InputEvent {
@@ -137,7 +141,7 @@ impl InputManager for RdevInputManager {
     }
 }
 
-// this implementation for wayland, because wayland is a pain and rdev no worky
+// Linux implementation for input management using evdev
 #[cfg(target_os = "linux")]
 pub struct EvdevInputManager {
     virtual_device: Mutex<VirtualDevice>,
@@ -427,6 +431,90 @@ impl InputManager for EvdevInputManager {
             let mut device = self.virtual_device.lock().unwrap();
             for _ in 0..count {
                 self.send_key_click(&mut *device, keycode)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+// macOS implementation for input management using CoreGraphics
+#[cfg(target_os = "macos")]
+pub struct EvdevInputManager;
+
+#[cfg(target_os = "macos")]
+impl EvdevInputManager {
+    pub fn new() -> Result<Self> {
+        Ok(Self)
+    }
+
+    fn enigo_to_cgkeycode(key: EnigoKey) -> Option<CGKeyCode> {
+        match key {
+            EnigoKey::LeftArrow => Some(0x7B),
+            EnigoKey::Backspace => Some(0x33),
+            _ => None,
+        }
+    }
+
+    fn send_key_event(keycode: CGKeyCode, key_down: bool) -> Result<()> {
+        let event_source = CGEventSource::new(CGEventSourceStateID::HIDSystemState)
+            .map_err(|_| anyhow::anyhow!("Failed to create CGEventSource"))?;
+            
+        let event = CGEvent::new_keyboard_event(event_source, keycode, key_down)
+            .map_err(|_| anyhow::anyhow!("Failed to create keyboard event"))?;
+        
+        event.post(CGEventTapLocation::HID);
+        thread::sleep(Duration::from_millis(1));
+        Ok(())
+    }
+
+    fn send_key_click(keycode: CGKeyCode) -> Result<()> {
+        Self::send_key_event(keycode, true)?;
+        Self::send_key_event(keycode, false)?;
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "macos")]
+impl InputManager for EvdevInputManager {
+    fn start_listening(&self, _callback: Box<dyn Fn(InputEvent) + Send + Sync>) -> Result<()> {
+        // For macOS, we'll use a simplified approach with polling
+        // This is a placeholder implementation that focuses on text injection
+        // A full implementation would require proper event monitoring with accessibility permissions
+        thread::spawn(move || {
+            // This is a minimal stub - a full implementation would require:
+            // 1. Setting up accessibility permissions
+            // 2. Using CGEventTap with proper callback management
+            // 3. Handling the complex Core Foundation run loop integration
+            println!("[macOS InputManager] Keyboard monitoring started (placeholder implementation)");
+            
+            // Keep the thread alive but don't actually monitor for now
+            // This allows the application to continue working without keyboard monitoring
+            loop {
+                thread::sleep(Duration::from_secs(1));
+            }
+        });
+        
+        Ok(())
+    }
+
+    fn inject_text(&self, text: &str) -> Result<()> {
+        if text.chars().all(|c| c == '\u{8}') {
+            return self.inject_key_clicks(EnigoKey::Backspace, text.len());
+        }
+
+        with_clipboard_text(text, || {
+            // Cmd+V on macOS
+            Self::send_key_event(0x37, true)?; // Left Command key down
+            Self::send_key_click(0x09)?; // V key
+            Self::send_key_event(0x37, false)?; // Left Command key up
+            Ok(())
+        })
+    }
+
+    fn inject_key_clicks(&self, key: EnigoKey, count: usize) -> Result<()> {
+        if let Some(keycode) = Self::enigo_to_cgkeycode(key) {
+            for _ in 0..count {
+                Self::send_key_click(keycode)?;
             }
         }
         Ok(())
