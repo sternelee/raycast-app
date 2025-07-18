@@ -76,6 +76,8 @@ core-foundation = "0.10"
 icns = "0.3.1"
 dirs = "6.0.0"
 rig-core = { git = "https://github.com/0xPlaygrounds/rig", branch = "main" }
+numbat = "1.10.0"
+numbat-exchange-rates = "0.5.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"

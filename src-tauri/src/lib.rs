@@ -13,6 +13,7 @@ mod frecency;
 mod oauth;
 mod quicklinks;
 mod snippets;
+mod soulver;
 mod store;
 mod system;
 
@@ -325,6 +326,7 @@ pub fn run() {
             ai::get_ai_settings,
             ai::set_ai_settings,
             ai::ai_can_access,
+            soulver::calculate_soulver,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

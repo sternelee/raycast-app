@@ -7,10 +7,16 @@ import { frecencyStore } from './frecency.svelte';
 import { viewManager } from './viewManager.svelte';
 import type { App } from './apps.svelte';
 
+export type UnifiedItemData =
+	| PluginInfo
+	| App
+	| Quicklink
+	| { value: string; result: string; resultType: string };
+
 export type UnifiedItem = {
 	type: 'calculator' | 'plugin' | 'app' | 'quicklink';
 	id: string;
-	data: any;
+	data: UnifiedItemData;
 	score: number;
 };
 
@@ -32,7 +38,11 @@ export function useCommandPaletteItems({
 	selectedQuicklinkForArgument
 }: UseCommandPaletteItemsArgs) {
 	const allSearchableItems = $derived.by(() => {
-		const items: { type: 'plugin' | 'app' | 'quicklink'; id: string; data: any }[] = [];
+		const items: {
+			type: 'plugin' | 'app' | 'quicklink';
+			id: string;
+			data: PluginInfo | App | Quicklink;
+		}[] = [];
 		items.push(...plugins().map((p) => ({ type: 'plugin', id: p.pluginPath, data: p }) as const));
 		items.push(...installedApps().map((a) => ({ type: 'app', id: a.exec, data: a }) as const));
 		items.push(
@@ -59,19 +69,25 @@ export function useCommandPaletteItems({
 	let calculatorResult = $state<{ value: string; type: string } | null>(null);
 	let calculationId = 0;
 
+	// Helper function to check if input contains only numbers and operators
+	function isCalculatorExpression(input: string): boolean {
+		// Allow digits, operators (+, -, *, /, %), decimal points, parentheses, and spaces
+		const calculatorRegex = /^[0-9+\-*/()%. ]+$/;
+		return calculatorRegex.test(input) && /[0-9]/.test(input); // Must contain at least one digit
+	}
+
 	$effect(() => {
 		const term = searchText();
 		calculationId++;
 		const currentCalculationId = calculationId;
 
-		if (!term.trim() || selectedQuicklinkForArgument()) {
+		if (!term.trim() || selectedQuicklinkForArgument() || !isCalculatorExpression(term.trim())) {
 			calculatorResult = null;
 			return;
 		}
 
 		(async () => {
 			try {
-				// TODO: Use the new API
 				const resultJson = await invoke<string>('calculate_soulver', { expression: term.trim() });
 
 				if (currentCalculationId !== calculationId) {
@@ -196,7 +212,8 @@ export function useCommandPaletteActions({
 
 		switch (item.type) {
 			case 'calculator': {
-				writeText(item.data.result);
+				const calcData = item.data as { value: string; result: string; resultType: string };
+				writeText(calcData.result);
 				break;
 			}
 			case 'plugin': {
@@ -204,8 +221,9 @@ export function useCommandPaletteActions({
 				break;
 			}
 			case 'app': {
-				if (item.data.exec) {
-					invoke('launch_app', { exec: item.data.exec }).catch(console.error);
+				const appData = item.data as App;
+				if (appData.exec) {
+					invoke('launch_app', { exec: appData.exec }).catch(console.error);
 				}
 				break;
 			}
@@ -246,19 +264,22 @@ export function useCommandPaletteActions({
 	function handleConfigureCommand() {
 		const item = selectedItem();
 		if (item?.type !== 'plugin') return;
-		viewManager.showSettings(item.data.pluginName);
+		const pluginData = item.data as PluginInfo;
+		viewManager.showSettings(pluginData.pluginName);
 	}
 
 	function handleCopyAppName() {
 		const item = selectedItem();
 		if (item?.type !== 'app') return;
-		writeText(item.data.name);
+		const appData = item.data as App;
+		writeText(appData.name);
 	}
 
 	function handleCopyAppPath() {
 		const item = selectedItem();
 		if (item?.type !== 'app') return;
-		writeText(item.data.exec);
+		const appData = item.data as App;
+		writeText(appData.exec);
 	}
 
 	async function handleHideApp() {
