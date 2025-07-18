@@ -85,6 +85,8 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		border-radius: var(--radius);
+		overflow: hidden;
 	}
 }
 

@@ -1,4 +1,4 @@
-use crate::{app::App, desktop::DesktopFileManager, error::AppError};
+use crate::{app::App, desktop, error::AppError};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -7,7 +7,7 @@ use std::{
     time::SystemTime,
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AppCache {
     apps: Vec<App>,
     dir_mod_times: HashMap<PathBuf, SystemTime>,
@@ -38,26 +38,30 @@ impl AppCache {
         Ok(())
     }
 
-    pub fn is_stale(&self) -> bool {
-        DesktopFileManager::get_app_directories()
-            .into_iter()
-            .any(|dir| {
-                let current_mod_time = fs::metadata(&dir).ok().and_then(|m| m.modified().ok());
-                let cached_mod_time = self.dir_mod_times.get(&dir);
-
-                match (current_mod_time, cached_mod_time) {
-                    (Some(current), Some(cached)) => current > *cached,
-                    _ => true,
+    pub fn is_stale(&self, new_dir_mod_times: &HashMap<PathBuf, SystemTime>) -> bool {
+        for (dir, cached_mod_time) in &self.dir_mod_times {
+            if let Some(current_mod_time) = new_dir_mod_times.get(dir) {
+                if current_mod_time > cached_mod_time {
+                    return true;
                 }
-            })
+            } else {
+                // Directory in cache no longer exists
+                return true;
+            }
+        }
+        // Check for new directories not in cache
+        new_dir_mod_times.len() != self.dir_mod_times.len()
     }
 
     pub fn get_apps() -> Result<Vec<App>, AppError> {
         let cache_path = Self::get_cache_path()?;
 
         if let Ok(cached_data) = Self::read_from_file(&cache_path) {
-            if !cached_data.is_stale() {
-                return Ok(cached_data.apps);
+            // Perform a quick check without a full rescan
+            if let Ok((_, new_dir_mod_times)) = desktop::scan_and_parse_apps() {
+                if !cached_data.is_stale(&new_dir_mod_times) {
+                    return Ok(cached_data.apps);
+                }
             }
         }
 
@@ -65,7 +69,7 @@ impl AppCache {
     }
 
     pub fn refresh_and_get_apps() -> Result<Vec<App>, AppError> {
-        let (apps, dir_mod_times) = DesktopFileManager::scan_and_parse_apps()?;
+        let (apps, dir_mod_times) = desktop::scan_and_parse_apps()?;
         let cache_data = AppCache {
             apps: apps.clone(),
             dir_mod_times,
