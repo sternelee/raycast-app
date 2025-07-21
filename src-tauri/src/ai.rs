@@ -3,7 +3,7 @@ use crate::store::{Storable, Store};
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
 use rig::prelude::*;
-use rig::providers::openai;
+use rig::providers::{anthropic, deepseek, gemini, groq, openai, openrouter, xai};
 use rig::streaming::StreamingPrompt;
 use rusqlite::{params, Result as RusqliteResult};
 use serde::{Deserialize, Serialize};
@@ -91,6 +91,9 @@ pub struct ProviderConfig {
     pub top_p: Option<f64>,
     pub max_tokens: Option<u32>,
     pub enabled: bool,
+    pub base_url: Option<String>, // For custom endpoints
+    pub supports_streaming: bool,
+    pub supports_function_calling: bool,
 }
 
 impl Default for ProviderConfig {
@@ -99,14 +102,17 @@ impl Default for ProviderConfig {
             api_key: None,
             model: "gpt-4o-mini".to_string(),
             temperature: 0.7,
-            top_p: None,
-            max_tokens: None,
+            top_p: Some(1.0),
+            max_tokens: Some(2048),
             enabled: false,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: false,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum AIProvider {
     OpenAI,
@@ -116,6 +122,7 @@ pub enum AIProvider {
     OpenRouter,
     XAI,
     DeepSeek,
+    Groq,
 }
 
 impl AIProvider {
@@ -128,6 +135,7 @@ impl AIProvider {
             AIProvider::OpenRouter => "openrouter",
             AIProvider::XAI => "xai",
             AIProvider::DeepSeek => "deepseek",
+            AIProvider::Groq => "groq",
         }
     }
 
@@ -140,98 +148,182 @@ impl AIProvider {
             "openrouter" => Some(AIProvider::OpenRouter),
             "xai" => Some(AIProvider::XAI),
             "deepseek" => Some(AIProvider::DeepSeek),
+            "groq" => Some(AIProvider::Groq),
             _ => None,
         }
     }
 
     pub fn default_models(&self) -> Vec<&'static str> {
         match self {
-            AIProvider::OpenAI => vec!["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "o1", "o3"],
+            AIProvider::OpenAI => vec![
+                "gpt-4o",
+                "gpt-4o-mini",
+                "gpt-4-turbo",
+                "gpt-4",
+                "o1",
+                "o1-mini",
+                "o3-mini",
+            ],
             AIProvider::Anthropic => vec![
+                "claude-3-5-sonnet-20241022",
+                "claude-3-5-haiku-20241022",
                 "claude-3-opus-20240229",
                 "claude-3-sonnet-20240229",
                 "claude-3-haiku-20240307",
             ],
-            AIProvider::Gemini => {
-                vec!["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash-001"]
-            }
+            AIProvider::Gemini => vec![
+                "gemini-2.0-flash-exp",
+                "gemini-1.5-pro",
+                "gemini-1.5-flash",
+                "gemini-1.5-flash-8b",
+            ],
             AIProvider::Perplexity => vec![
                 "llama-3.1-sonar-small-128k-online",
                 "llama-3.1-sonar-large-128k-online",
+                "llama-3.1-sonar-huge-128k-online",
             ],
             AIProvider::OpenRouter => vec![
                 "openai/gpt-4o",
-                "anthropic/claude-3-sonnet",
+                "anthropic/claude-3-5-sonnet",
                 "meta-llama/llama-3.1-405b-instruct",
+                "google/gemini-pro-1.5",
+                "mistralai/mistral-large",
             ],
-            AIProvider::XAI => vec!["grok-beta"],
-            AIProvider::DeepSeek => vec!["deepseek-chat", "deepseek-coder"],
+            AIProvider::XAI => vec!["grok-beta", "grok-2-1212", "grok-2-vision-1212"],
+            AIProvider::DeepSeek => vec!["deepseek-chat", "deepseek-coder", "deepseek-reasoner"],
+            AIProvider::Groq => vec![
+                "llama-3.1-70b-versatile",
+                "llama-3.1-8b-instant",
+                "mixtral-8x7b-32768",
+                "gemma2-9b-it",
+            ],
         }
     }
+
+    pub fn supports_streaming(&self) -> bool {
+        match self {
+            AIProvider::OpenAI => true,
+            AIProvider::Anthropic => true,
+            AIProvider::Gemini => true,      // Now implemented in rig
+            AIProvider::Perplexity => false, // Not implemented in rig yet
+            AIProvider::OpenRouter => true,
+            AIProvider::XAI => true,
+            AIProvider::DeepSeek => true,
+            AIProvider::Groq => true,
+        }
+    }
+
+    pub fn supports_function_calling(&self) -> bool {
+        match self {
+            AIProvider::OpenAI => true,
+            AIProvider::Anthropic => true,
+            AIProvider::Gemini => true,
+            AIProvider::Perplexity => false,
+            AIProvider::OpenRouter => true, // Depends on model
+            AIProvider::XAI => false,
+            AIProvider::DeepSeek => true,
+            AIProvider::Groq => true,
+        }
+    }
+
+    pub fn keyring_service(&self) -> String {
+        format!("dev.byteatatime.raycast.ai.{}", self.as_str())
+    }
+
+    pub fn keyring_username(&self) -> String {
+        format!("{}_api_key", self.as_str())
+    }
 }
+
+// Optimized model mappings organized by provider
 static DEFAULT_AI_MODELS: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     let mut m = HashMap::new();
-    // OpenAI
-    m.insert("OpenAI_GPT4.1", "openai/gpt-4.1");
-    m.insert("OpenAI_GPT4.1-mini", "openai/gpt-4.1-mini");
-    m.insert("OpenAI_GPT4.1-nano", "openai/gpt-4.1-nano");
-    m.insert("OpenAI_GPT4", "openai/gpt-4");
-    m.insert("OpenAI_GPT4-turbo", "openai/gpt-4-turbo");
+
+    // OpenAI Models
     m.insert("OpenAI_GPT4o", "openai/gpt-4o");
-    m.insert("OpenAI_GPT4o-mini", "openai/gpt-4o-mini");
-    m.insert("OpenAI_o3", "openai/o3");
-    m.insert("OpenAI_o4-mini", "openai/o4-mini");
-    m.insert("OpenAI_o1", "openai/o1");
-    m.insert("OpenAI_o3-mini", "openai/o3-mini");
-    // Anthropic
-    m.insert("Anthropic_Claude_Haiku", "anthropic/claude-3-haiku");
-    m.insert("Anthropic_Claude_Sonnet", "anthropic/claude-3-sonnet");
-    m.insert("Anthropic_Claude_Sonnet_3.7", "anthropic/claude-3.7-sonnet");
-    m.insert("Anthropic_Claude_Opus", "anthropic/claude-3-opus");
-    m.insert("Anthropic_Claude_4_Sonnet", "anthropic/claude-sonnet-4");
-    m.insert("Anthropic_Claude_4_Opus", "anthropic/claude-opus-4");
-    // Perplexity
-    m.insert("Perplexity_Sonar", "perplexity/sonar");
-    m.insert("Perplexity_Sonar_Pro", "perplexity/sonar-pro");
-    m.insert("Perplexity_Sonar_Reasoning", "perplexity/sonar-reasoning");
+    m.insert("OpenAI_GPT4o_Mini", "openai/gpt-4o-mini");
+    m.insert("OpenAI_GPT4_Turbo", "openai/gpt-4-turbo");
+    m.insert("OpenAI_GPT4", "openai/gpt-4");
+    m.insert("OpenAI_O1", "openai/o1");
+    m.insert("OpenAI_O1_Mini", "openai/o1-mini");
+    m.insert("OpenAI_O3_Mini", "openai/o3-mini");
+
+    // Anthropic Models
     m.insert(
-        "Perplexity_Sonar_Reasoning_Pro",
-        "perplexity/sonar-reasoning-pro",
+        "Anthropic_Claude_3_5_Sonnet",
+        "anthropic/claude-3-5-sonnet-20241022",
     );
+    m.insert(
+        "Anthropic_Claude_3_5_Haiku",
+        "anthropic/claude-3-5-haiku-20241022",
+    );
+    m.insert(
+        "Anthropic_Claude_3_Opus",
+        "anthropic/claude-3-opus-20240229",
+    );
+    m.insert(
+        "Anthropic_Claude_3_Sonnet",
+        "anthropic/claude-3-sonnet-20240229",
+    );
+    m.insert(
+        "Anthropic_Claude_3_Haiku",
+        "anthropic/claude-3-haiku-20240307",
+    );
+
+    // Google Models
+    m.insert("Google_Gemini_2_0_Flash", "google/gemini-2.0-flash-exp");
+    m.insert("Google_Gemini_1_5_Pro", "google/gemini-1.5-pro");
+    m.insert("Google_Gemini_1_5_Flash", "google/gemini-1.5-flash");
+    m.insert("Google_Gemini_1_5_Flash_8B", "google/gemini-1.5-flash-8b");
+
+    // Perplexity Models
+    m.insert(
+        "Perplexity_Sonar_Small",
+        "perplexity/llama-3.1-sonar-small-128k-online",
+    );
+    m.insert(
+        "Perplexity_Sonar_Large",
+        "perplexity/llama-3.1-sonar-large-128k-online",
+    );
+    m.insert(
+        "Perplexity_Sonar_Huge",
+        "perplexity/llama-3.1-sonar-huge-128k-online",
+    );
+
     // Meta (via OpenRouter)
-    m.insert("Llama4_Scout", "meta-llama/llama-4-scout");
-    m.insert("Llama3.3_70B", "meta-llama/llama-3.3-70b-instruct");
-    m.insert("Llama3.1_8B", "meta-llama/llama-3.1-8b-instruct");
-    m.insert("Llama3.1_405B", "meta-llama/llama-3.1-405b-instruct");
+    m.insert("Meta_Llama_3_1_405B", "meta-llama/llama-3.1-405b-instruct");
+    m.insert("Meta_Llama_3_1_70B", "meta-llama/llama-3.1-70b-instruct");
+    m.insert("Meta_Llama_3_1_8B", "meta-llama/llama-3.1-8b-instruct");
+
     // Mistral (via OpenRouter)
-    m.insert("Mistral_Nemo", "mistralai/mistral-nemo");
     m.insert("Mistral_Large", "mistralai/mistral-large");
-    m.insert("Mistral_Medium", "mistralai/mistral-medium-3");
-    m.insert("Mistral_Small", "mistralai/mistral-small");
-    m.insert("Mistral_Codestral", "mistralai/codestral-2501");
-    // DeepSeek (via OpenRouter)
-    m.insert(
-        "DeepSeek_R1_Distill_Llama_3.3_70B",
-        "deepseek/deepseek-r1-distill-llama-70b",
-    );
-    m.insert("DeepSeek_R1", "deepseek/deepseek-r1");
-    m.insert("DeepSeek_V3", "deepseek/deepseek-chat");
-    // Google
-    m.insert("Google_Gemini_2.5_Pro", "google/gemini-2.5-pro");
-    m.insert("Google_Gemini_2.5_Flash", "google/gemini-2.5-flash");
-    m.insert("Google_Gemini_2.0_Flash", "google/gemini-2.0-flash-001");
-    // xAI (via OpenRouter)
-    m.insert("xAI_Grok_3", "x-ai/grok-3");
-    m.insert("xAI_Grok_3_Mini", "x-ai/grok-3-mini");
+    m.insert("Mistral_Nemo", "mistralai/mistral-nemo");
+    m.insert("Mistral_Codestral", "mistralai/codestral-latest");
+
+    // DeepSeek Models
+    m.insert("DeepSeek_Chat", "deepseek/deepseek-chat");
+    m.insert("DeepSeek_Coder", "deepseek/deepseek-coder");
+    m.insert("DeepSeek_Reasoner", "deepseek/deepseek-reasoner");
+
+    // xAI Models
+    m.insert("xAI_Grok_Beta", "x-ai/grok-beta");
     m.insert("xAI_Grok_2", "x-ai/grok-2-1212");
+    m.insert("xAI_Grok_2_Vision", "x-ai/grok-2-vision-1212");
+
+    // Groq Models
+    m.insert("Groq_Llama_3_1_70B", "groq/llama-3.1-70b-versatile");
+    m.insert("Groq_Llama_3_1_8B", "groq/llama-3.1-8b-instant");
+    m.insert("Groq_Mixtral_8x7B", "groq/mixtral-8x7b-32768");
+    m.insert("Groq_Gemma2_9B", "groq/gemma2-9b-it");
 
     m
 });
 
+/// Get default provider configurations with optimized settings
 fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
     let mut configs = HashMap::new();
 
-    // OpenAI default config
+    // OpenAI configuration
     configs.insert(
         "openai".to_string(),
         ProviderConfig {
@@ -239,12 +331,15 @@ fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
             model: "gpt-4o-mini".to_string(),
             temperature: 0.7,
             top_p: Some(1.0),
-            max_tokens: Some(2048),
+            max_tokens: Some(4096),
             enabled: true,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: true,
         },
     );
 
-    // Anthropic default config
+    // Anthropic configuration
     configs.insert(
         "anthropic".to_string(),
         ProviderConfig {
@@ -252,12 +347,15 @@ fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
             model: "claude-3-5-sonnet-20241022".to_string(),
             temperature: 0.7,
             top_p: Some(1.0),
-            max_tokens: Some(2048),
+            max_tokens: Some(4096),
             enabled: false,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: true,
         },
     );
 
-    // Add other providers...
+    // Gemini configuration
     configs.insert(
         "gemini".to_string(),
         ProviderConfig {
@@ -265,11 +363,15 @@ fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
             model: "gemini-1.5-flash".to_string(),
             temperature: 0.7,
             top_p: Some(1.0),
-            max_tokens: Some(2048),
+            max_tokens: Some(4096),
             enabled: false,
+            base_url: None,
+            supports_streaming: false,
+            supports_function_calling: true,
         },
     );
 
+    // Perplexity configuration
     configs.insert(
         "perplexity".to_string(),
         ProviderConfig {
@@ -277,11 +379,31 @@ fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
             model: "llama-3.1-sonar-small-128k-online".to_string(),
             temperature: 0.7,
             top_p: Some(1.0),
-            max_tokens: Some(2048),
+            max_tokens: Some(4096),
             enabled: false,
+            base_url: None,
+            supports_streaming: false,
+            supports_function_calling: false,
         },
     );
 
+    // OpenRouter configuration
+    configs.insert(
+        "openrouter".to_string(),
+        ProviderConfig {
+            api_key: None,
+            model: "openai/gpt-4o-mini".to_string(),
+            temperature: 0.7,
+            top_p: Some(1.0),
+            max_tokens: Some(4096),
+            enabled: false,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: true,
+        },
+    );
+
+    // xAI configuration
     configs.insert(
         "xai".to_string(),
         ProviderConfig {
@@ -289,11 +411,15 @@ fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
             model: "grok-beta".to_string(),
             temperature: 0.7,
             top_p: Some(1.0),
-            max_tokens: Some(2048),
+            max_tokens: Some(4096),
             enabled: false,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: false,
         },
     );
 
+    // DeepSeek configuration
     configs.insert(
         "deepseek".to_string(),
         ProviderConfig {
@@ -301,42 +427,202 @@ fn get_default_provider_configs() -> HashMap<String, ProviderConfig> {
             model: "deepseek-chat".to_string(),
             temperature: 0.7,
             top_p: Some(1.0),
-            max_tokens: Some(2048),
+            max_tokens: Some(4096),
             enabled: false,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: true,
+        },
+    );
+
+    // Groq configuration
+    configs.insert(
+        "groq".to_string(),
+        ProviderConfig {
+            api_key: None,
+            model: "llama-3.1-70b-versatile".to_string(),
+            temperature: 0.7,
+            top_p: Some(1.0),
+            max_tokens: Some(4096),
+            enabled: false,
+            base_url: None,
+            supports_streaming: true,
+            supports_function_calling: true,
         },
     );
 
     configs
 }
 
-// Keyring functions for each provider
-fn get_openai_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new("dev.byteatatime.raycast.ai", "openai_api_key").map_err(AppError::from)
+/// Unified keyring management
+struct KeyringManager;
+
+impl KeyringManager {
+    fn get_entry_for_provider(provider: &AIProvider) -> Result<keyring::Entry, AppError> {
+        keyring::Entry::new(&provider.keyring_service(), &provider.keyring_username())
+            .map_err(AppError::from)
+    }
+
+    fn get_legacy_entry() -> Result<keyring::Entry, AppError> {
+        keyring::Entry::new(AI_KEYRING_SERVICE, AI_KEYRING_USERNAME).map_err(AppError::from)
+    }
+
+    pub fn set_api_key(provider: &AIProvider, key: &str) -> Result<(), AppError> {
+        let entry = Self::get_entry_for_provider(provider)?;
+        entry.set_password(key).map_err(AppError::from)?;
+        Ok(())
+    }
+
+    pub fn get_api_key(provider: &AIProvider) -> Result<String, AppError> {
+        // For OpenRouter, try legacy key first for backward compatibility
+        if provider == &AIProvider::OpenRouter {
+            if let Ok(entry) = Self::get_legacy_entry() {
+                if let Ok(key) = entry.get_password() {
+                    return Ok(key);
+                }
+            }
+        }
+
+        let entry = Self::get_entry_for_provider(provider)?;
+        entry.get_password().map_err(AppError::from)
+    }
+
+    pub fn is_api_key_set(provider: &AIProvider) -> bool {
+        Self::get_api_key(provider).is_ok()
+    }
+
+    pub fn clear_api_key(provider: &AIProvider) -> Result<(), AppError> {
+        let entry = Self::get_entry_for_provider(provider)?;
+        entry.delete_credential().map_err(AppError::from)?;
+        Ok(())
+    }
 }
 
-fn get_anthropic_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new("dev.byteatatime.raycast.ai", "anthropic_api_key").map_err(AppError::from)
-}
+/// Provider agent factory for creating streaming agents
+struct ProviderAgentFactory;
 
-fn get_gemini_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new("dev.byteatatime.raycast.ai", "gemini_api_key").map_err(AppError::from)
-}
+impl ProviderAgentFactory {
+    pub fn create_agent(
+        provider: &AIProvider,
+        config: &ProviderConfig,
+        api_key: &str,
+        options: &AskOptions,
+    ) -> Result<Box<dyn rig::Agent>, String> {
+        let temperature = options.temperature.unwrap_or(config.temperature);
+        let max_tokens = options.max_tokens.or(config.max_tokens);
 
-fn get_perplexity_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new("dev.byteatatime.raycast.ai", "perplexity_api_key").map_err(AppError::from)
-}
+        match provider {
+            AIProvider::OpenAI => {
+                let client = openai::Client::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
 
-fn get_xai_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new("dev.byteatatime.raycast.ai", "xai_api_key").map_err(AppError::from)
-}
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
 
-fn get_deepseek_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new("dev.byteatatime.raycast.ai", "deepseek_api_key").map_err(AppError::from)
-}
+                Ok(Box::new(agent_builder.build()))
+            }
+            AIProvider::DeepSeek => {
+                let client = deepseek::Client::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
 
-// Legacy keyring function for backward compatibility
-fn get_keyring_entry() -> Result<keyring::Entry, AppError> {
-    keyring::Entry::new(AI_KEYRING_SERVICE, AI_KEYRING_USERNAME).map_err(AppError::from)
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
+
+                Ok(Box::new(agent_builder.build()))
+            }
+            AIProvider::XAI => {
+                let client = xai::Client::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
+
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
+
+                Ok(Box::new(agent_builder.build()))
+            }
+            AIProvider::OpenRouter => {
+                let client = openrouter::Client::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
+
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
+
+                Ok(Box::new(agent_builder.build()))
+            }
+            AIProvider::Anthropic => {
+                let client = anthropic::Anthropic::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
+
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
+
+                Ok(Box::new(agent_builder.build()))
+            }
+            AIProvider::Gemini => {
+                let client = gemini::Client::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
+
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
+
+                Ok(Box::new(agent_builder.build()))
+            }
+            AIProvider::Groq => {
+                let client = groq::Client::new(api_key);
+                let model = options.model.as_ref().unwrap_or(&config.model);
+                let mut agent_builder = client.agent(model);
+
+                agent_builder = agent_builder.temperature(temperature);
+                if let Some(top_p) = options.top_p.or(config.top_p) {
+                    agent_builder = agent_builder.top_p(top_p);
+                }
+                if let Some(max_tokens) = max_tokens {
+                    agent_builder = agent_builder.max_tokens(max_tokens as u64);
+                }
+
+                Ok(Box::new(agent_builder.build()))
+            }
+            _ => Err(format!(
+                "Provider {:?} streaming not yet implemented",
+                provider
+            )),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -346,6 +632,51 @@ pub struct AiSettings {
     model_associations: HashMap<String, String>,
     providers: HashMap<String, ProviderConfig>,
     default_provider: String,
+    global_temperature: Option<f64>,
+    global_max_tokens: Option<u32>,
+}
+
+impl AiSettings {
+    /// Validate settings configuration
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate default provider exists
+        if !self.providers.contains_key(&self.default_provider) {
+            return Err(format!(
+                "Default provider '{}' not found in providers",
+                self.default_provider
+            ));
+        }
+
+        // Validate provider configurations
+        for (name, config) in &self.providers {
+            if let Some(provider) = AIProvider::from_str(name) {
+                if !provider.default_models().contains(&config.model.as_str()) {
+                    eprintln!(
+                        "Warning: Model '{}' might not be valid for provider '{}'",
+                        config.model, name
+                    );
+                }
+            }
+        }
+
+        // Validate temperature range
+        if let Some(temp) = self.global_temperature {
+            if !(0.0..=2.0).contains(&temp) {
+                return Err("Global temperature must be between 0.0 and 2.0".to_string());
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get enabled providers
+    pub fn get_enabled_providers(&self) -> Vec<String> {
+        self.providers
+            .iter()
+            .filter(|(_, config)| config.enabled)
+            .map(|(name, _)| name.clone())
+            .collect()
+    }
 }
 
 fn get_settings_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -388,7 +719,7 @@ pub fn get_ai_settings(app: tauri::AppHandle) -> Result<AiSettings, String> {
 
     // Set default provider if not set
     if user_settings.default_provider.is_empty() {
-        user_settings.default_provider = "openrouter".to_string();
+        user_settings.default_provider = "openai".to_string();
     }
 
     // Ensure all providers have default configs
@@ -412,18 +743,26 @@ pub fn get_ai_settings(app: tauri::AppHandle) -> Result<AiSettings, String> {
         }
     }
 
+    // Validate settings
+    user_settings.validate()?;
+
     Ok(user_settings)
 }
 
 #[tauri::command]
-pub fn set_ai_settings(app: tauri::AppHandle, settings: AiSettings) -> Result<(), String> {
+pub fn set_ai_settings(app: tauri::AppHandle, mut settings: AiSettings) -> Result<(), String> {
     let path = get_settings_path(&app)?;
+
+    // Validate before saving
+    settings.validate()?;
 
     let mut settings_to_save = AiSettings {
         enabled: settings.enabled,
         model_associations: HashMap::new(),
         providers: settings.providers.clone(),
         default_provider: settings.default_provider.clone(),
+        global_temperature: settings.global_temperature,
+        global_max_tokens: settings.global_max_tokens,
     };
 
     // Only save model associations that differ from defaults (backward compatibility)
@@ -440,35 +779,28 @@ pub fn set_ai_settings(app: tauri::AppHandle, settings: AiSettings) -> Result<()
     write_settings(&path, &settings_to_save)
 }
 
-fn get_keyring_entry_for_provider(provider: &str) -> Result<keyring::Entry, AppError> {
-    let service = format!("dev.byteatatime.raycast.ai.{}", provider);
-    let username = format!("{}_api_key", provider);
-    keyring::Entry::new(&service, &username).map_err(AppError::from)
-}
-
 #[tauri::command]
 pub fn set_provider_api_key(provider: String, key: String) -> Result<(), String> {
-    get_keyring_entry_for_provider(&provider)
-        .and_then(|entry| entry.set_password(&key).map_err(AppError::from))
-        .map_err(|e| e.to_string())
+    let ai_provider =
+        AIProvider::from_str(&provider).ok_or_else(|| format!("Invalid provider: {}", provider))?;
+
+    KeyringManager::set_api_key(&ai_provider, &key).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn is_provider_api_key_set(provider: String) -> Result<bool, String> {
-    match get_keyring_entry_for_provider(&provider)
-        .and_then(|entry| entry.get_password().map_err(AppError::from))
-    {
-        Ok(_) => Ok(true),
-        Err(AppError::Keyring(keyring::Error::NoEntry)) => Ok(false),
-        Err(e) => Err(e.to_string()),
-    }
+    let ai_provider =
+        AIProvider::from_str(&provider).ok_or_else(|| format!("Invalid provider: {}", provider))?;
+
+    Ok(KeyringManager::is_api_key_set(&ai_provider))
 }
 
 #[tauri::command]
 pub fn clear_provider_api_key(provider: String) -> Result<(), String> {
-    get_keyring_entry_for_provider(&provider)
-        .and_then(|entry| entry.delete_credential().map_err(AppError::from))
-        .map_err(|e| e.to_string())
+    let ai_provider =
+        AIProvider::from_str(&provider).ok_or_else(|| format!("Invalid provider: {}", provider))?;
+
+    KeyringManager::clear_api_key(&ai_provider).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -481,6 +813,7 @@ pub fn get_available_providers() -> Result<Vec<String>, String> {
         "openrouter".to_string(),
         "xai".to_string(),
         "deepseek".to_string(),
+        "groq".to_string(),
     ])
 }
 
@@ -498,11 +831,37 @@ pub fn get_provider_models(provider: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub fn get_provider_capabilities(provider: String) -> Result<HashMap<String, bool>, String> {
+    let ai_provider =
+        AIProvider::from_str(&provider).ok_or_else(|| format!("Unknown provider: {}", provider))?;
+
+    let mut capabilities = HashMap::new();
+    capabilities.insert("streaming".to_string(), ai_provider.supports_streaming());
+    capabilities.insert(
+        "function_calling".to_string(),
+        ai_provider.supports_function_calling(),
+    );
+
+    Ok(capabilities)
+}
+
+#[tauri::command]
 pub fn ai_can_access(app: tauri::AppHandle) -> Result<bool, String> {
     let settings = get_ai_settings(app)?;
     if !settings.enabled {
         return Ok(false);
     }
+
+    // Check if any provider has an API key set
+    for provider_name in settings.get_enabled_providers() {
+        if let Some(ai_provider) = AIProvider::from_str(&provider_name) {
+            if KeyringManager::is_api_key_set(&ai_provider) {
+                return Ok(true);
+            }
+        }
+    }
+
+    // Fallback to legacy check for OpenRouter
     Ok(is_ai_api_key_set())
 }
 
@@ -541,6 +900,27 @@ impl AiUsageManager {
             params![limit, offset],
         )
     }
+
+    pub fn get_usage_stats(&self, days: u32) -> Result<HashMap<String, i64>, AppError> {
+        let since_timestamp = chrono::Utc::now().timestamp() - (days as i64 * 24 * 60 * 60);
+
+        let rows: Vec<(String, i64, i64)> = self.store.query(
+            "SELECT model, SUM(tokens_prompt), SUM(tokens_completion) FROM ai_generations WHERE created > ?1 GROUP BY model",
+            params![since_timestamp],
+        )?;
+
+        let mut stats = HashMap::new();
+        for (model, prompt_tokens, completion_tokens) in rows {
+            stats.insert(format!("{}_prompt_tokens", model), prompt_tokens);
+            stats.insert(format!("{}_completion_tokens", model), completion_tokens);
+            stats.insert(
+                format!("{}_total_tokens", model),
+                prompt_tokens + completion_tokens,
+            );
+        }
+
+        Ok(stats)
+    }
 }
 
 #[tauri::command]
@@ -552,6 +932,14 @@ pub fn get_ai_usage_history(
     manager
         .get_history(limit, offset)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_ai_usage_stats(
+    manager: State<AiUsageManager>,
+    days: u32,
+) -> Result<HashMap<String, i64>, String> {
+    manager.get_usage_stats(days).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -571,8 +959,17 @@ pub async fn ai_ask_stream(
         AIProvider::from_str(provider_str)
             .ok_or_else(|| format!("Invalid provider: {}", provider_str))?
     } else {
-        AIProvider::OpenAI // Default provider
+        AIProvider::from_str(&settings.default_provider)
+            .ok_or_else(|| format!("Invalid default provider: {}", settings.default_provider))?
     };
+
+    // Check if provider supports streaming
+    if !provider.supports_streaming() {
+        return Err(format!(
+            "Provider {:?} does not support streaming",
+            provider
+        ));
+    }
 
     // Get provider configuration
     let config = settings
@@ -580,87 +977,86 @@ pub async fn ai_ask_stream(
         .get(&provider.as_str().to_string())
         .ok_or_else(|| format!("No configuration found for provider: {:?}", provider))?;
 
-    // Get API key for the provider
-    let api_key = match provider {
-        AIProvider::OpenAI => get_openai_keyring_entry(),
-        AIProvider::Anthropic => get_anthropic_keyring_entry(),
-        AIProvider::Gemini => get_gemini_keyring_entry(),
-        AIProvider::Perplexity => get_perplexity_keyring_entry(),
-        AIProvider::OpenRouter => get_keyring_entry(), // Use legacy function for OpenRouter
-        AIProvider::XAI => get_xai_keyring_entry(),
-        AIProvider::DeepSeek => get_deepseek_keyring_entry(),
+    if !config.enabled {
+        return Err(format!("Provider {:?} is not enabled", provider));
     }
-    .and_then(|entry| entry.get_password().map_err(AppError::from))
-    .map_err(|e| format!("Failed to get API key for {:?}: {}", provider, e))?;
 
-    // Create agent based on provider
+    // Get API key for the provider
+    let api_key = KeyringManager::get_api_key(&provider)
+        .map_err(|e| format!("Failed to get API key for {:?}: {}", provider, e))?;
+
+    // Create agent using factory
+    let agent = ProviderAgentFactory::create_agent(&provider, config, &api_key, &options)?;
+
     let mut full_text = String::new();
 
-    match provider {
-        AIProvider::OpenAI => {
-            let client = openai::Client::new(&api_key);
-            let mut agent_builder = client.agent(&config.model);
+    // Create streaming prompt
+    let mut stream = agent
+        .stream_prompt(&prompt)
+        .await
+        .map_err(|e| format!("Stream error: {}", e))?;
 
-            agent_builder = agent_builder.temperature(config.temperature);
-            if let Some(max_tokens) = config.max_tokens {
-                agent_builder = agent_builder.max_tokens(max_tokens as u64);
-            }
+    // Process the stream with improved error handling
+    while let Some(chunk_result) = stream.next().await {
+        match chunk_result {
+            Ok(chunk) => {
+                match chunk {
+                    rig::completion::AssistantContent::Text(content) => {
+                        let content_str = content.text.clone();
+                        full_text.push_str(&content_str);
 
-            let agent = agent_builder.build();
-            let mut stream = agent
-                .stream_prompt(&prompt)
-                .await
-                .map_err(|e| format!("Stream error: {}", e))?;
-
-            // Process the stream
-            while let Some(chunk_result) = stream.next().await {
-                match chunk_result {
-                    Ok(chunk) => {
-                        match chunk {
-                            rig::completion::AssistantContent::Text(content) => {
-                                let content_str = content.text.clone();
-                                full_text.push_str(&content_str);
-
-                                // Emit chunk to frontend
-                                app_handle
-                                    .emit(
-                                        "ai-stream-chunk",
-                                        StreamChunk {
-                                            request_id: request_id.clone(),
-                                            text: content_str,
-                                        },
-                                    )
-                                    .map_err(|e| e.to_string())?;
-                            }
-                            _ => {
-                                // Handle other types of content if needed
-                            }
+                        // Emit chunk to frontend
+                        if let Err(e) = app_handle.emit(
+                            "ai-stream-chunk",
+                            StreamChunk {
+                                request_id: request_id.clone(),
+                                text: content_str,
+                            },
+                        ) {
+                            eprintln!("Failed to emit stream chunk: {}", e);
                         }
                     }
-                    Err(e) => {
-                        return Err(format!("Stream error: {}", e));
+                    _ => {
+                        // Handle other types of content if needed
                     }
                 }
             }
-        }
-        _ => {
-            return Err(format!(
-                "Provider {:?} not yet implemented in streaming",
-                provider
-            ));
+            Err(e) => {
+                eprintln!("Stream error: {}", e);
+                return Err(format!("Stream error: {}", e));
+            }
         }
     }
 
     // Emit end signal
-    app_handle
-        .emit(
-            "ai-stream-end",
-            StreamEnd {
-                request_id: request_id.clone(),
-                full_text: full_text.clone(),
-            },
-        )
-        .map_err(|e| e.to_string())?;
+    if let Err(e) = app_handle.emit(
+        "ai-stream-end",
+        StreamEnd {
+            request_id: request_id.clone(),
+            full_text: full_text.clone(),
+        },
+    ) {
+        eprintln!("Failed to emit stream end: {}", e);
+        return Err(format!("Failed to emit stream end: {}", e));
+    }
+
+    // Log usage (you may want to extract token count from the stream response)
+    if let Ok(usage_manager) = app_handle.try_state::<AiUsageManager>() {
+        let generation_data = GenerationData {
+            id: request_id,
+            created: chrono::Utc::now().timestamp(),
+            model: options.model.unwrap_or(config.model.clone()),
+            tokens_prompt: 0,     // TODO: Extract from response
+            tokens_completion: 0, // TODO: Extract from response
+            native_tokens_prompt: 0,
+            native_tokens_completion: 0,
+            total_cost: 0.0,
+        };
+
+        if let Err(e) = usage_manager.log_generation(&generation_data) {
+            eprintln!("Failed to log generation: {}", e);
+        }
+    }
 
     Ok(())
 }
@@ -668,21 +1064,59 @@ pub async fn ai_ask_stream(
 // Legacy API functions for backward compatibility
 #[tauri::command]
 pub fn set_ai_api_key(api_key: String) -> Result<(), String> {
-    let entry = get_keyring_entry().map_err(|e| e.to_string())?;
-    entry.set_password(&api_key).map_err(|e| e.to_string())?;
-    Ok(())
+    KeyringManager::get_legacy_entry()
+        .and_then(|entry| entry.set_password(&api_key).map_err(AppError::from))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn is_ai_api_key_set() -> bool {
-    get_keyring_entry()
+    KeyringManager::get_legacy_entry()
         .and_then(|entry| entry.get_password().map_err(AppError::from))
         .is_ok()
 }
 
 #[tauri::command]
 pub fn clear_ai_api_key() -> Result<(), String> {
-    let entry = get_keyring_entry().map_err(|e| e.to_string())?;
-    entry.delete_credential().map_err(|e| e.to_string())?;
-    Ok(())
+    KeyringManager::get_legacy_entry()
+        .and_then(|entry| entry.delete_credential().map_err(AppError::from))
+        .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ai_provider_from_str() {
+        assert_eq!(AIProvider::from_str("openai"), Some(AIProvider::OpenAI));
+        assert_eq!(
+            AIProvider::from_str("anthropic"),
+            Some(AIProvider::Anthropic)
+        );
+        assert_eq!(AIProvider::from_str("invalid"), None);
+    }
+
+    #[test]
+    fn test_ai_settings_validation() {
+        let mut settings = AiSettings::default();
+        settings.default_provider = "nonexistent".to_string();
+
+        assert!(settings.validate().is_err());
+    }
+
+    #[test]
+    fn test_provider_capabilities() {
+        assert!(AIProvider::OpenAI.supports_streaming());
+        assert!(AIProvider::OpenAI.supports_function_calling());
+        assert!(!AIProvider::Perplexity.supports_function_calling());
+
+        // Test new providers
+        assert!(AIProvider::Anthropic.supports_streaming());
+        assert!(AIProvider::Anthropic.supports_function_calling());
+        assert!(AIProvider::Gemini.supports_streaming());
+        assert!(AIProvider::Gemini.supports_function_calling());
+        assert!(AIProvider::Groq.supports_streaming());
+        assert!(AIProvider::Groq.supports_function_calling());
+    }
 }
