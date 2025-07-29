@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Flare",
+  "productName": "flare",
   "version": "0.1.0",
   "identifier": "dev.byteatatime.flare",
   "build": {
